@@ -35,6 +35,7 @@ import { SettingsPage } from './pages/SettingsPage';
 export const App: React.FC = () => {
   const {
     isAuthenticated,
+    currentUser,
     isStkModalOpen,
     setIsStkModalOpen,
     stkPaymentDetails,
@@ -55,7 +56,7 @@ export const App: React.FC = () => {
     setViewingInvoice
   } = useTenant();
 
-  // If user is NOT logged in, exclusively render the Login Page and hide all portal UI
+  // If user is NOT authenticated, strictly display the login page across all paths
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 transition-colors">
@@ -68,6 +69,8 @@ export const App: React.FC = () => {
     );
   }
 
+  const isTenantRole = currentUser.role === 'tenant';
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 transition-colors">
       <Header />
@@ -76,17 +79,38 @@ export const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="/properties" element={<PropertiesPage />} />
-          <Route path="/units" element={<UnitsPage />} />
-          <Route path="/tenants" element={<TenantsPage />} />
-          <Route path="/accounting" element={<AccountingPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/users" element={<UsersPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/gate-pass" element={<GatePassPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Protected Administrative Modules (Restricted from Tenants) */}
+          <Route
+            path="/properties"
+            element={isTenantRole ? <Navigate to="/" replace /> : <PropertiesPage />}
+          />
+          <Route
+            path="/units"
+            element={isTenantRole ? <Navigate to="/" replace /> : <UnitsPage />}
+          />
+          <Route
+            path="/tenants"
+            element={isTenantRole ? <Navigate to="/" replace /> : <TenantsPage />}
+          />
+          <Route
+            path="/accounting"
+            element={isTenantRole ? <Navigate to="/" replace /> : <AccountingPage />}
+          />
+          <Route
+            path="/reports"
+            element={isTenantRole ? <Navigate to="/" replace /> : <ReportsPage />}
+          />
+          <Route
+            path="/users"
+            element={isTenantRole ? <Navigate to="/" replace /> : <UsersPage />}
+          />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -10,7 +10,7 @@ interface PasswordResetModalProps {
 }
 
 export const PasswordResetModal: React.FC<PasswordResetModalProps> = ({ isOpen, onClose, user }) => {
-  const { addToast } = useTenant();
+  const { addToast, updateUserPassword } = useTenant();
   const [copied, setCopied] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -41,12 +41,13 @@ export const PasswordResetModal: React.FC<PasswordResetModalProps> = ({ isOpen, 
     }
     setIsResetting(true);
     setTimeout(() => {
+      updateUserPassword(user.id, newPassword);
       setIsResetting(false);
       setResetSuccess(true);
       addToast({
         type: 'success',
         title: 'Password Updated 🔐',
-        message: `Password for ${user.email} has been updated successfully.`
+        message: `Password for ${user.email} has been updated to "${newPassword}".`
       });
     }, 800);
   };
@@ -77,7 +78,7 @@ export const PasswordResetModal: React.FC<PasswordResetModalProps> = ({ isOpen, 
             <ShieldCheck className="w-10 h-10 text-emerald-600 mx-auto" />
             <h4 className="text-base font-bold text-slate-900 dark:text-white">Password Reset Complete</h4>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              The password for <strong>{user.email}</strong> has been updated. The user can now log in immediately.
+              The password for <strong>{user.email}</strong> has been updated. The user can now log in immediately with the new password.
             </p>
             <button
               onClick={onClose}

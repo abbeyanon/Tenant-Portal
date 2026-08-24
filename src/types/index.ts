@@ -1,5 +1,17 @@
 export type UserRole = 'tenant' | 'landlord' | 'manager' | 'accountant' | 'caretaker' | 'admin';
 
+export interface UserPermissions {
+  properties: boolean;
+  units: boolean;
+  tenants: boolean;
+  accounting: boolean;
+  reports: boolean;
+  maintenance: boolean;
+  users: boolean;
+  gatePass: boolean;
+  documents: boolean;
+}
+
 export interface Property {
   id: string;
   name: string;
@@ -15,13 +27,16 @@ export interface SystemUser {
   id: string;
   name: string;
   email: string;
+  password?: string;
   role: UserRole;
   phone?: string;
+  propertyId?: string;
   propertyName?: string;
   unitNumber?: string;
   status: 'Active' | 'Inactive' | 'Pending Reset';
   lastLogin?: string;
   avatar?: string;
+  permissions: UserPermissions;
 }
 
 export interface UserAccount {
@@ -30,9 +45,11 @@ export interface UserAccount {
   email: string;
   role: UserRole;
   unitNumber?: string;
+  propertyId?: string;
   propertyName?: string;
   avatar?: string;
   token?: string;
+  permissions?: UserPermissions;
 }
 
 export interface Tenant {

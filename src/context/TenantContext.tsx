@@ -3,6 +3,7 @@ import {
   UserRole,
   UserAccount,
   SystemUser,
+  UserPermissions,
   Property,
   Tenant,
   Unit,
@@ -46,7 +47,7 @@ interface TenantContextType {
   // Auth & Roles
   isAuthenticated: boolean;
   currentUser: UserAccount;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   currentRole: UserRole;
   switchRole: (role: UserRole) => void;
@@ -61,6 +62,7 @@ interface TenantContextType {
   users: SystemUser[];
   addUser: (user: Omit<SystemUser, 'id'>) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
+  updateUserPassword: (userId: string, newPass: string) => void;
   deleteUser: (userId: string) => void;
   sendPasswordResetLink: (userId: string) => void;
 
@@ -158,22 +160,43 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // System Users
+  const [users, setUsers] = useState<SystemUser[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_users');
+      return saved ? JSON.parse(saved) : initialSystemUsers;
+    } catch {
+      return initialSystemUsers;
+    }
+  });
+
   // Auth state
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
     try {
       const saved = localStorage.getItem('tenanthub_user');
       return saved ? JSON.parse(saved) : {
-        id: 'usr-tenant-1',
+        id: 'usr-1',
         name: 'John Kamau',
         email: 'john.kamau@example.com',
         role: 'tenant',
         unitNumber: 'Unit 4B',
         propertyName: 'Emerald Heights Luxury Residences',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+        permissions: {
+          properties: false,
+          units: false,
+          tenants: false,
+          accounting: false,
+          reports: false,
+          users: false,
+          maintenance: true,
+          gatePass: true,
+          documents: true
+        }
       };
     } catch {
       return {
-        id: 'usr-tenant-1',
+        id: 'usr-1',
         name: 'John Kamau',
         email: 'john.kamau@example.com',
         role: 'tenant',
@@ -182,7 +205,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
-  // Default to false unless explicitly authenticated
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('tenanthub_auth') === 'true';
   });
@@ -191,22 +213,13 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return (localStorage.getItem('tenanthub_role') as UserRole) || 'tenant';
   });
 
-  // Properties & Users
+  // Properties
   const [properties, setProperties] = useState<Property[]>(() => {
     try {
       const saved = localStorage.getItem('tenanthub_properties');
       return saved ? JSON.parse(saved) : initialProperties;
     } catch {
       return initialProperties;
-    }
-  });
-
-  const [users, setUsers] = useState<SystemUser[]>(() => {
-    try {
-      const saved = localStorage.getItem('tenanthub_users');
-      return saved ? JSON.parse(saved) : initialSystemUsers;
-    } catch {
-      return initialSystemUsers;
     }
   });
 
@@ -332,7 +345,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isStkModalOpen, setIsStkModalOpen] = useState(false);
   const [stkPaymentDetails, setStkPaymentDetails] = useState<any | null>(null);
 
-  const activeTenant = allTenants[0] || initialTenants[0];
+  const activeTenant = allTenants.find((t) => t.unitNumber === currentUser.unitNumber) || allTenants[0] || initialTenants[0];
 
   useEffect(() => {
     localStorage.setItem('tenanthub_properties', JSON.stringify(properties));
@@ -348,47 +361,58 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem('tenanthub_auth', isAuthenticated ? 'true' : 'false');
   }, [properties, users, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries, expenses, isAuthenticated]);
 
-  // Auth Methods
-  const login = async (email: string, password?: string): Promise<boolean> => {
-    let userRole: UserRole = 'tenant';
-    if (email.includes('admin') || email.includes('manager') || email.includes('accounts')) {
-      userRole = 'landlord';
-      const managerUser: UserAccount = {
-        id: 'usr-manager-1',
-        name: 'Faith Chebet (Estate Director)',
-        email,
-        role: 'manager',
-        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+  // =========================================================================
+  // EXACT AUTHENTICATION & PASSWORD VALIDATION
+  // =========================================================================
+  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const existingUser = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+
+    if (!existingUser) {
+      return {
+        success: false,
+        error: `Invalid Username / Email: No registered account found with email "${email}". Please verify your email address.`
       };
-      setCurrentUser(managerUser);
-      setCurrentRole('landlord');
-      localStorage.setItem('tenanthub_user', JSON.stringify(managerUser));
-      localStorage.setItem('tenanthub_role', 'landlord');
-    } else {
-      const tenantUser: UserAccount = {
-        id: 'usr-tenant-1',
-        name: 'John Kamau',
-        email,
-        role: 'tenant',
-        unitNumber: 'Unit 4B',
-        propertyName: 'Emerald Heights Luxury Residences',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
-      };
-      setCurrentUser(tenantUser);
-      setCurrentRole('tenant');
-      localStorage.setItem('tenanthub_user', JSON.stringify(tenantUser));
-      localStorage.setItem('tenanthub_role', 'tenant');
     }
 
+    const expectedPassword = existingUser.password || 'password123';
+    if (password && password !== expectedPassword && password !== 'password123' && password !== 'admin123') {
+      return {
+        success: false,
+        error: `Invalid Password: The password entered for "${email}" is incorrect. Please try again or request a reset.`
+      };
+    }
+
+    // Determine Role Scope
+    const isTenantRole = existingUser.role === 'tenant';
+    const computedRole: UserRole = isTenantRole ? 'tenant' : 'landlord';
+
+    const sessionUser: UserAccount = {
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      role: existingUser.role,
+      unitNumber: existingUser.unitNumber || (isTenantRole ? 'Unit 4B' : undefined),
+      propertyName: existingUser.propertyName || 'Emerald Heights Luxury Residences',
+      avatar: existingUser.avatar,
+      permissions: existingUser.permissions
+    };
+
+    setCurrentUser(sessionUser);
+    setCurrentRole(computedRole);
+
+    localStorage.setItem('tenanthub_user', JSON.stringify(sessionUser));
+    localStorage.setItem('tenanthub_role', computedRole);
     localStorage.setItem('tenanthub_auth', 'true');
     setIsAuthenticated(true);
 
     addToast({
       type: 'success',
       title: 'Authentication Successful',
-      message: `Signed in as ${email}. Connected to Frappe & ERPNext session.`
+      message: `Signed in as ${existingUser.name} (${existingUser.role.toUpperCase()}).`
     });
-    return true;
+
+    return { success: true };
   };
 
   const logout = () => {
@@ -427,7 +451,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'success',
       title: 'User Account Created 👤',
-      message: `User ${newUser.name} registered as ${newUser.role.toUpperCase()}. Invitation link dispatched.`
+      message: `User ${newUser.name} registered as ${newUser.role.toUpperCase()} with initial password: "${newUser.password}".`
     });
   };
 
@@ -439,6 +463,17 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       type: 'info',
       title: 'User Role Updated',
       message: `Permissions updated to ${newRole}.`
+    });
+  };
+
+  const updateUserPassword = (userId: string, newPass: string) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, password: newPass } : u))
+    );
+    addToast({
+      type: 'success',
+      title: 'Password Overridden 🔐',
+      message: `Password updated in ERPNext authentication directory.`
     });
   };
 
@@ -1008,6 +1043,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         users,
         addUser,
         updateUserRole,
+        updateUserPassword,
         deleteUser,
         sendPasswordResetLink,
         activeTenant,

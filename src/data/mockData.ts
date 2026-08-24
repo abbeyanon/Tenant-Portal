@@ -10,101 +10,48 @@ import {
   PropertyStats,
   SalesInvoice,
   PaymentEntry,
-  GLEntry
+  GLEntry,
+  SystemUser,
+  ExpenseEntry
 } from '../types';
 
+// Multi-Property Portfolios
 export const initialProperties: Property[] = [
   {
     id: 'prop-1',
     name: 'Emerald Heights Luxury Residences',
     location: 'Ngong Road, Nairobi',
     propertyType: 'Apartment Complex',
-    totalUnits: 24,
-    caretakerName: 'John Mwangi',
+    totalUnits: 36,
+    caretakerName: 'Dennis Ochieng',
     caretakerPhone: '+254 759 508 348',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=600&auto=format&fit=crop'
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'prop-2',
     name: 'Sapphire Palms Executive Suites',
     location: 'Kilimani, Nairobi',
     propertyType: 'Executive Suites',
-    totalUnits: 16,
-    caretakerName: 'Dennis Ochieng',
-    caretakerPhone: '+254 722 000 119',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600&auto=format&fit=crop'
+    totalUnits: 24,
+    caretakerName: 'James Mwangi',
+    caretakerPhone: '+254 722 111 222',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'prop-3',
     name: 'Oakwood Court Townhouses',
     location: 'Westlands, Nairobi',
     propertyType: 'Gated Community',
-    totalUnits: 12,
-    caretakerName: 'Erick Karanja',
-    caretakerPhone: '+254 711 222 333',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=600&auto=format&fit=crop'
+    totalUnits: 16,
+    caretakerName: 'Peter Kiprono',
+    caretakerPhone: '+254 733 999 888',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop'
   }
 ];
 
 export const initialUnits: Unit[] = [
   {
-    id: 'u-1a',
-    unitNumber: 'Unit 1A',
-    propertyId: 'prop-1',
-    propertyName: 'Emerald Heights Luxury Residences',
-    floor: 1,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFeet: 720,
-    rentAmount: 38000,
-    depositAmount: 38000,
-    status: 'vacant'
-  },
-  {
-    id: 'u-1c',
-    unitNumber: 'Unit 1C',
-    propertyId: 'prop-1',
-    propertyName: 'Emerald Heights Luxury Residences',
-    floor: 1,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFeet: 750,
-    rentAmount: 38000,
-    depositAmount: 38000,
-    status: 'occupied',
-    currentTenantId: 't-103',
-    currentTenantName: 'David Omondi'
-  },
-  {
-    id: 'u-2a',
-    unitNumber: 'Unit 2A',
-    propertyId: 'prop-1',
-    propertyName: 'Emerald Heights Luxury Residences',
-    floor: 2,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1150,
-    rentAmount: 48000,
-    depositAmount: 48000,
-    status: 'occupied',
-    currentTenantId: 't-102',
-    currentTenantName: 'Sarah Mutua'
-  },
-  {
-    id: 'u-3c',
-    unitNumber: 'Unit 3C',
-    propertyId: 'prop-1',
-    propertyName: 'Emerald Heights Luxury Residences',
-    floor: 3,
-    bedrooms: 3,
-    bathrooms: 3,
-    squareFeet: 1600,
-    rentAmount: 65000,
-    depositAmount: 65000,
-    status: 'vacant'
-  },
-  {
-    id: 'u-4b',
+    id: 'u-1',
     unitNumber: 'Unit 4B',
     propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
@@ -115,372 +62,368 @@ export const initialUnits: Unit[] = [
     rentAmount: 48000,
     depositAmount: 48000,
     status: 'occupied',
-    currentTenantId: 't-101',
-    currentTenantName: 'John Kamau'
+    currentTenantId: 't-1',
+    currentTenantName: 'John Kamau',
+    waterMeterNumber: 'WM-402'
   },
   {
-    id: 'u-5a',
-    unitNumber: 'Unit 5A (Penthouse)',
+    id: 'u-2',
+    unitNumber: 'Unit 2A',
     propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
-    floor: 5,
-    bedrooms: 3,
-    bathrooms: 3,
-    squareFeet: 1850,
-    rentAmount: 85000,
-    depositAmount: 85000,
-    status: 'maintenance'
+    floor: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 680,
+    rentAmount: 32000,
+    depositAmount: 32000,
+    status: 'occupied',
+    currentTenantId: 't-2',
+    currentTenantName: 'Sarah Hassan',
+    waterMeterNumber: 'WM-201'
   },
-  // Sapphire Palms Units
   {
-    id: 'u-sp-101',
+    id: 'u-3',
+    unitNumber: 'Unit 3C',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
+    floor: 3,
+    bedrooms: 3,
+    bathrooms: 2,
+    squareFeet: 1450,
+    rentAmount: 65000,
+    depositAmount: 65000,
+    status: 'occupied',
+    currentTenantId: 't-3',
+    currentTenantName: 'David Omondi',
+    waterMeterNumber: 'WM-303'
+  },
+  {
+    id: 'u-4',
+    unitNumber: 'Unit 1A',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
+    floor: 1,
+    bedrooms: 2,
+    bathrooms: 1,
+    squareFeet: 920,
+    rentAmount: 38000,
+    depositAmount: 38000,
+    status: 'vacant',
+    waterMeterNumber: 'WM-101'
+  },
+  {
+    id: 'u-5',
     unitNumber: 'Suite 101',
     propertyId: 'prop-2',
     propertyName: 'Sapphire Palms Executive Suites',
     floor: 1,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFeet: 850,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1200,
     rentAmount: 55000,
     depositAmount: 55000,
-    status: 'vacant'
+    status: 'occupied',
+    currentTenantId: 't-4',
+    currentTenantName: 'Grace Mutua',
+    waterMeterNumber: 'SP-101'
   },
   {
-    id: 'u-sp-202',
+    id: 'u-6',
     unitNumber: 'Suite 202',
     propertyId: 'prop-2',
     propertyName: 'Sapphire Palms Executive Suites',
     floor: 2,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1300,
-    rentAmount: 75000,
-    depositAmount: 75000,
-    status: 'vacant'
-  },
-  // Oakwood Court Units
-  {
-    id: 'u-ow-01',
-    unitNumber: 'Villa 01',
-    propertyId: 'prop-3',
-    propertyName: 'Oakwood Court Townhouses',
-    floor: 1,
-    bedrooms: 4,
-    bathrooms: 4,
-    squareFeet: 2800,
-    rentAmount: 140000,
-    depositAmount: 140000,
-    status: 'vacant'
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 750,
+    rentAmount: 42000,
+    depositAmount: 42000,
+    status: 'vacant',
+    waterMeterNumber: 'SP-202'
   }
 ];
 
 export const initialTenants: Tenant[] = [
   {
-    id: 't-101',
+    id: 't-1',
     name: 'John Kamau',
     email: 'john.kamau@example.com',
     phone: '+254 712 345 678',
     propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
-    unitId: 'u-4b',
+    unitId: 'u-1',
     unitNumber: 'Unit 4B',
     rentAmount: 48000,
     depositAmount: 48000,
     balanceDue: 0,
     paymentStatus: 'paid',
-    leaseStart: '2025-11-01',
-    leaseEnd: '2026-10-31',
+    leaseStart: '2026-01-01',
+    leaseEnd: '2026-12-31',
+    vehiclePlate: 'KDF 889Q',
+    waterMeterNumber: 'WM-402',
+    lastWaterReading: 158,
     emergencyContact: {
-      name: 'Grace Wambui (Spouse)',
-      phone: '+254 722 112 233',
+      name: 'Grace Wambui',
+      phone: '+254 722 000 111',
       relationship: 'Spouse'
     },
-    vehiclePlate: 'KDK 892M',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
   },
   {
-    id: 't-102',
-    name: 'Sarah Mutua',
-    email: 'sarah.mutua@example.com',
-    phone: '+254 723 456 789',
+    id: 't-2',
+    name: 'Sarah Hassan',
+    email: 'sarah.hassan@example.com',
+    phone: '+254 722 998 877',
     propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
-    unitId: 'u-2a',
+    unitId: 'u-2',
     unitNumber: 'Unit 2A',
-    rentAmount: 48000,
-    depositAmount: 48000,
-    balanceDue: 48000,
+    rentAmount: 32000,
+    depositAmount: 32000,
+    balanceDue: 32000,
     paymentStatus: 'due',
-    leaseStart: '2025-08-15',
-    leaseEnd: '2026-08-14',
+    leaseStart: '2026-03-01',
+    leaseEnd: '2027-02-28',
+    waterMeterNumber: 'WM-201',
     emergencyContact: {
-      name: 'Daniel Mutua (Brother)',
-      phone: '+254 733 998 877',
+      name: 'Ahmed Hassan',
+      phone: '+254 733 445 566',
       relationship: 'Brother'
-    },
-    vehiclePlate: 'KDF 412X',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+    }
   },
   {
-    id: 't-103',
+    id: 't-3',
     name: 'David Omondi',
     email: 'david.omondi@example.com',
-    phone: '+254 734 567 890',
+    phone: '+254 733 112 233',
     propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
-    unitId: 'u-1c',
-    unitNumber: 'Unit 1C',
-    rentAmount: 38000,
-    depositAmount: 38000,
-    balanceDue: 76000,
+    unitId: 'u-3',
+    unitNumber: 'Unit 3C',
+    rentAmount: 65000,
+    depositAmount: 65000,
+    balanceDue: 65000,
     paymentStatus: 'overdue',
-    leaseStart: '2025-06-01',
-    leaseEnd: '2026-05-31',
+    leaseStart: '2025-09-01',
+    leaseEnd: '2026-08-31',
+    vehiclePlate: 'KDG 123M',
+    waterMeterNumber: 'WM-303',
     emergencyContact: {
-      name: 'Mary Achieng',
-      phone: '+254 711 556 677',
+      name: 'Mercy Omondi',
+      phone: '+254 711 223 344',
       relationship: 'Sister'
-    },
-    vehiclePlate: 'KCL 190P',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop'
+    }
   }
 ];
 
-export const initialPayments: PaymentRecord[] = [
+export const initialSystemUsers: SystemUser[] = [
   {
-    id: 'pay-001',
-    receiptNumber: 'TH-REC-2026-0812',
+    id: 'usr-1',
+    name: 'John Kamau',
+    email: 'john.kamau@example.com',
+    password: 'password123',
+    phone: '+254 712 345 678',
+    role: 'tenant',
+    propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
     unitNumber: 'Unit 4B',
-    tenantName: 'John Kamau',
-    tenantPhone: '+254 712 345 678',
-    amount: 48000,
-    type: 'rent',
-    method: 'mpesa',
-    transactionRef: 'QKD8921KL9',
-    invoiceMonth: 'August 2026',
-    status: 'completed',
-    date: '2026-08-04 10:24:15'
+    status: 'Active',
+    lastLogin: '2026-08-24 14:45:00',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+    permissions: {
+      properties: false,
+      units: false,
+      tenants: false,
+      accounting: false,
+      reports: false,
+      users: false,
+      maintenance: true,
+      gatePass: true,
+      documents: true
+    }
   },
   {
-    id: 'pay-002',
-    receiptNumber: 'TH-REC-2026-0813',
+    id: 'usr-2',
+    name: 'Faith Chebet (Estate Director)',
+    email: 'admin@emeraldheights.co.ke',
+    password: 'admin123',
+    phone: '+254 759 508 348',
+    role: 'manager',
+    propertyId: 'prop-1',
     propertyName: 'Emerald Heights Luxury Residences',
-    unitNumber: 'Unit 4B',
-    tenantName: 'John Kamau',
-    tenantPhone: '+254 712 345 678',
-    amount: 3200,
-    type: 'water',
-    method: 'mpesa',
-    transactionRef: 'QKX4410LM2',
-    invoiceMonth: 'August 2026',
-    status: 'completed',
-    date: '2026-08-05 14:10:00'
-  }
-];
-
-export const initialMaintenanceTickets: MaintenanceTicket[] = [
-  {
-    id: 'tk-101',
-    ticketNumber: 'MT-2026-042',
-    propertyName: 'Emerald Heights Luxury Residences',
-    unitNumber: 'Unit 4B',
-    tenantName: 'John Kamau',
-    tenantPhone: '+254 712 345 678',
-    category: 'plumbing',
-    title: 'Master Bathroom Mixer Tap Dripping Water',
-    description: 'The hot water mixer tap in the ensuite bathroom is leaking slowly under the vanity cabinet.',
-    priority: 'medium',
-    status: 'in_progress',
-    assignedTechnician: 'Peter Mwangi (Lead Plumber)',
-    technicianPhone: '+254 722 445 566',
-    reportedDate: '2026-08-20',
-    notes: ['Technician inspected seals on Aug 21. Replacement ceramic cartridge ordered.']
-  }
-];
-
-export const initialAnnouncements: Announcement[] = [
-  {
-    id: 'ann-1',
-    title: 'Routine Water Tank Cleaning & Pressure Testing',
-    content: 'Nairobi Water supply to overhead tanks will undergo annual disinfection on Saturday, Aug 29 from 9:00 AM to 2:00 PM.',
-    category: 'utility',
-    date: '2026-08-22',
-    author: 'Estate Management',
-    isUrgent: true,
-    propertyName: 'Emerald Heights Luxury Residences'
-  }
-];
-
-export const initialGatePasses: GatePass[] = [
-  {
-    id: 'gp-1',
-    passCode: 'GP-8924',
-    visitorName: 'Brian Mutiso (Delivery)',
-    visitorPhone: '+254 711 223 344',
-    unitNumber: 'Unit 4B',
-    validDate: '2026-08-24',
-    status: 'active',
-    createdDate: '2026-08-24 08:30'
-  }
-];
-
-export const initialDocuments: PropertyDocument[] = [
-  {
-    id: 'doc-1',
-    title: 'Residential Tenancy Agreement (Unit 4B)',
-    category: 'lease',
-    unitNumber: 'Unit 4B',
-    fileSize: '1.4 MB (Signed PDF)',
-    uploadedDate: '2025-11-01'
+    status: 'Active',
+    lastLogin: '2026-08-24 15:10:00',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop',
+    permissions: {
+      properties: true,
+      units: true,
+      tenants: true,
+      accounting: true,
+      reports: true,
+      users: true,
+      maintenance: true,
+      gatePass: true,
+      documents: true
+    }
   },
   {
-    id: 'doc-2',
-    title: 'Resident Bylaws & Estate House Rules',
-    category: 'house_rules',
-    unitNumber: 'Unit 4B',
-    fileSize: '450 KB (PDF)',
-    uploadedDate: '2025-11-01'
+    id: 'usr-3',
+    name: 'Patrick Musyoka (Head Accountant)',
+    email: 'accounts@emeraldheights.co.ke',
+    password: 'accounts123',
+    phone: '+254 722 888 999',
+    role: 'accountant',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
+    status: 'Active',
+    lastLogin: '2026-08-24 10:15:00',
+    permissions: {
+      properties: false,
+      units: true,
+      tenants: true,
+      accounting: true,
+      reports: true,
+      users: false,
+      maintenance: false,
+      gatePass: false,
+      documents: true
+    }
+  },
+  {
+    id: 'usr-4',
+    name: 'Dennis Ochieng (Caretaker)',
+    email: 'dennis.caretaker@emeraldheights.co.ke',
+    password: 'caretaker123',
+    phone: '+254 722 000 119',
+    role: 'caretaker',
+    propertyId: 'prop-2',
+    propertyName: 'Sapphire Palms Executive Suites',
+    status: 'Active',
+    lastLogin: '2026-08-23 16:30:00',
+    permissions: {
+      properties: false,
+      units: true,
+      tenants: false,
+      accounting: false,
+      reports: false,
+      users: false,
+      maintenance: true,
+      gatePass: true,
+      documents: false
+    }
   }
 ];
-
-export const initialStats: PropertyStats = {
-  totalUnits: 52,
-  occupiedUnits: 46,
-  occupancyRate: 88.5,
-  totalCollectedThisMonth: 1980000,
-  totalPendingArrears: 124000,
-  activeMaintenanceTickets: 3
-};
 
 export const initialSalesInvoices: SalesInvoice[] = [
   {
     id: 'sinv-001',
-    invoiceNumber: 'ACC-SINV-2026-0801',
+    invoiceNumber: 'ACC-SINV-2026-0089',
+    companyName: 'EMERALD HEIGHTS PROPERTY MANAGEMENT LTD',
+    companyPin: 'P051982734Z',
     customerName: 'John Kamau',
     unitNumber: 'Unit 4B',
     propertyName: 'Emerald Heights Luxury Residences',
-    grandTotal: 48000,
+    grandTotal: 55880,
     outstandingAmount: 0,
     status: 'Paid',
     postingDate: '2026-08-01',
     dueDate: '2026-08-05',
     incomeAccount: '4110 - Rental Income - Emerald Heights',
-    costCenter: 'Emerald Heights - Operations'
+    costCenter: 'Emerald Heights - Operations',
+    inWords: 'Fifty-Five Thousand Eight Hundred Eighty Kenyan Shillings Only',
+    items: [
+      {
+        id: 'itm-1',
+        itemCode: 'RENT-RESIDENTIAL',
+        itemName: 'Monthly Residential Apartment Lease Rent',
+        description: 'Apartment rent for Unit 4B - August 2026',
+        qty: 1,
+        rate: 48000,
+        amount: 48000
+      },
+      {
+        id: 'itm-2',
+        itemCode: 'UTILITY-WATER',
+        itemName: 'Water Consumption Utility',
+        description: 'Meter #WM-402: Prev 142 m³ - Curr 158 m³ = 16 m³ @ KES 180',
+        meterPrevious: 142,
+        meterCurrent: 158,
+        meterUnits: 16,
+        qty: 16,
+        rate: 180,
+        amount: 2880
+      },
+      {
+        id: 'itm-3',
+        itemCode: 'UTILITY-SERVICE',
+        itemName: 'Estate Service Charge',
+        description: '24/7 Security guard patrol & cleaning',
+        qty: 1,
+        rate: 5000,
+        amount: 5000
+      }
+    ],
+    remarks: 'August 2026 Rent & Water settlement'
   },
   {
     id: 'sinv-002',
-    invoiceNumber: 'ACC-SINV-2026-0802',
-    customerName: 'Sarah Mutua',
+    invoiceNumber: 'ACC-SINV-2026-0090',
+    companyName: 'EMERALD HEIGHTS PROPERTY MANAGEMENT LTD',
+    companyPin: 'P051982734Z',
+    customerName: 'Sarah Hassan',
     unitNumber: 'Unit 2A',
     propertyName: 'Emerald Heights Luxury Residences',
-    grandTotal: 48000,
-    outstandingAmount: 48000,
+    grandTotal: 32000,
+    outstandingAmount: 32000,
     status: 'Unpaid',
     postingDate: '2026-08-01',
     dueDate: '2026-08-05',
     incomeAccount: '4110 - Rental Income - Emerald Heights',
-    costCenter: 'Emerald Heights - Operations'
+    costCenter: 'Emerald Heights - Operations',
+    inWords: 'Thirty-Two Thousand Kenyan Shillings Only'
   }
 ];
 
 export const initialPaymentEntries: PaymentEntry[] = [
   {
     id: 'pe-001',
-    voucherNumber: 'ACC-PAY-2026-0089',
+    voucherNumber: 'ACC-PAY-2026-0091',
     partyName: 'John Kamau',
     unitNumber: 'Unit 4B',
     propertyName: 'Emerald Heights Luxury Residences',
-    paidAmount: 48000,
+    paidAmount: 55880,
     modeOfPayment: 'M-Pesa',
     paidToAccount: '1120 - Safaricom M-Pesa Till Account',
-    referenceNo: 'QKD8921KL9',
-    postingDate: '2026-08-04',
-    remarks: 'August 2026 Rent Settlement for Unit 4B'
+    referenceNo: 'QK8921KL9',
+    postingDate: '2026-08-03',
+    remarks: 'M-Pesa settlement for Unit 4B Rent & Water'
   }
 ];
 
 export const initialGLEntries: GLEntry[] = [
   {
     id: 'gl-001',
-    voucherType: 'Sales Invoice',
-    voucherNo: 'ACC-SINV-2026-0801',
-    account: '1310 - Debtors / Accounts Receivable (John Kamau)',
-    debit: 48000,
+    voucherType: 'Payment Entry',
+    voucherNo: 'ACC-PAY-2026-0091',
+    account: '1120 - Safaricom M-Pesa Till Account',
+    debit: 55880,
     credit: 0,
-    postingDate: '2026-08-01',
-    remarks: 'Rent Invoice for Unit 4B'
+    postingDate: '2026-08-03',
+    remarks: 'M-Pesa collection Ref: QK8921KL9'
   },
   {
     id: 'gl-002',
-    voucherType: 'Sales Invoice',
-    voucherNo: 'ACC-SINV-2026-0801',
-    account: '4110 - Rental Income - Emerald Heights',
-    debit: 0,
-    credit: 48000,
-    postingDate: '2026-08-01',
-    remarks: 'Rental Income recognized for August 2026'
-  },
-  {
-    id: 'gl-003',
     voucherType: 'Payment Entry',
-    voucherNo: 'ACC-PAY-2026-0089',
-    account: '1120 - Safaricom M-Pesa Till Account',
-    debit: 48000,
-    credit: 0,
-    postingDate: '2026-08-04',
-    remarks: 'M-Pesa rent receipt QKD8921KL9'
+    voucherNo: 'ACC-PAY-2026-0091',
+    account: '1310 - Debtors / Accounts Receivable (John Kamau)',
+    debit: 0,
+    credit: 55880,
+    postingDate: '2026-08-03',
+    remarks: 'Debtor settlement against Unit 4B'
   }
 ];
 
-// System User Accounts
-export const initialSystemUsers: SystemUser[] = [
-  {
-    id: 'usr-1',
-    name: 'John Kamau',
-    email: 'john.kamau@example.com',
-    phone: '+254 712 345 678',
-    role: 'tenant',
-    propertyName: 'Emerald Heights Luxury Residences',
-    unitNumber: 'Unit 4B',
-    status: 'Active',
-    lastLogin: '2026-08-24 13:45:00',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
-  },
-  {
-    id: 'usr-2',
-    name: 'Faith Chebet (Estate Director)',
-    email: 'admin@emeraldheights.co.ke',
-    phone: '+254 759 508 348',
-    role: 'manager',
-    propertyName: 'Emerald Heights Luxury Residences',
-    status: 'Active',
-    lastLogin: '2026-08-24 13:50:00',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
-  },
-  {
-    id: 'usr-3',
-    name: 'Patrick Musyoka (Head Accountant)',
-    email: 'accounts@emeraldheights.co.ke',
-    phone: '+254 722 888 999',
-    role: 'accountant',
-    propertyName: 'Emerald Heights Luxury Residences',
-    status: 'Active',
-    lastLogin: '2026-08-24 10:15:00'
-  },
-  {
-    id: 'usr-4',
-    name: 'Dennis Ochieng (Caretaker)',
-    email: 'dennis.caretaker@emeraldheights.co.ke',
-    phone: '+254 722 000 119',
-    role: 'caretaker',
-    propertyName: 'Sapphire Palms Executive Suites',
-    status: 'Active',
-    lastLogin: '2026-08-23 16:30:00'
-  }
-];
-
-// Operational Expenses
 export const initialExpenses: ExpenseEntry[] = [
   {
     id: 'exp-001',
@@ -503,27 +446,88 @@ export const initialExpenses: ExpenseEntry[] = [
     expenseAccount: '5120 - Borehole & Common Area Power',
     postingDate: '2026-08-05',
     remarks: 'Common area lighting & main pump power'
-  },
-  {
-    id: 'exp-003',
-    voucherNo: 'ACC-EXP-2026-0043',
-    category: 'Repairs & Maintenance',
-    propertyName: 'Emerald Heights Luxury Residences',
-    amount: 28000,
-    paidTo: 'Schindler Lifts East Africa',
-    expenseAccount: '5130 - Lift & Elevators Bi-Monthly Service',
-    postingDate: '2026-08-10',
-    remarks: 'Routine preventative elevator maintenance'
-  },
-  {
-    id: 'exp-004',
-    voucherNo: 'ACC-EXP-2026-0044',
-    category: 'Estate Cleaning',
-    propertyName: 'Emerald Heights Luxury Residences',
-    amount: 18000,
-    paidTo: 'SparkleClean Facility Care',
-    expenseAccount: '5140 - Waste Management & Hygiene',
-    postingDate: '2026-08-15',
-    remarks: 'Compound cleaning and trash collection'
   }
 ];
+
+export const initialPayments: PaymentRecord[] = [
+  {
+    id: 'pay-001',
+    receiptNumber: 'TH-REC-2026-0891',
+    propertyName: 'Emerald Heights Luxury Residences',
+    unitNumber: 'Unit 4B',
+    tenantName: 'John Kamau',
+    tenantPhone: '+254 712 345 678',
+    amount: 55880,
+    type: 'rent',
+    method: 'mpesa',
+    transactionRef: 'QK8921KL9',
+    invoiceMonth: 'August 2026',
+    status: 'completed',
+    date: '2026-08-03 10:14:22'
+  }
+];
+
+export const initialMaintenanceTickets: MaintenanceTicket[] = [
+  {
+    id: 'mt-001',
+    ticketNumber: 'MT-2026-089',
+    propertyName: 'Emerald Heights Luxury Residences',
+    unitNumber: 'Unit 4B',
+    tenantName: 'John Kamau',
+    tenantPhone: '+254 712 345 678',
+    category: 'plumbing',
+    title: 'Kitchen Sink Drainage Leak',
+    description: 'The pipe under the kitchen sink has a slight drip onto the cabinet baseboard.',
+    priority: 'medium',
+    status: 'assigned',
+    assignedTechnician: 'Samuel Mutua (Plumbing Specialist)',
+    technicianPhone: '+254 722 555 111',
+    reportedDate: '2026-08-24',
+    notes: ['Technician scheduled for visit at 3:00 PM']
+  }
+];
+
+export const initialAnnouncements: Announcement[] = [
+  {
+    id: 'ann-1',
+    title: 'Water Tank Preventative Cleaning',
+    content: 'Routine cleaning of the main rooftop water reservoirs will take place this Thursday from 9 AM to 1 PM.',
+    category: 'utility',
+    date: '2026-08-23',
+    author: 'Management Office',
+    isUrgent: false
+  }
+];
+
+export const initialGatePasses: GatePass[] = [
+  {
+    id: 'gp-1',
+    passCode: 'GP-8492',
+    visitorName: 'Jane Wambui',
+    visitorPhone: '+254 722 111 333',
+    unitNumber: 'Unit 4B',
+    validDate: '2026-08-24',
+    status: 'active',
+    createdDate: '11:30 AM'
+  }
+];
+
+export const initialDocuments: PropertyDocument[] = [
+  {
+    id: 'doc-1',
+    title: 'Tenancy Lease Agreement - Unit 4B.pdf',
+    category: 'lease',
+    unitNumber: 'Unit 4B',
+    fileSize: '2.4 MB',
+    uploadedDate: '2026-01-01'
+  }
+];
+
+export const initialStats: PropertyStats = {
+  totalUnits: 76,
+  occupiedUnits: 58,
+  occupancyRate: 76,
+  totalCollectedThisMonth: 1845000,
+  totalPendingArrears: 97000,
+  activeMaintenanceTickets: 3
+};
