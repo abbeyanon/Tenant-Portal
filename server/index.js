@@ -15,17 +15,90 @@ app.use(express.json());
 
 const DB_FILE = path.join(__dirname, 'db.json');
 
+const initialSeedData = {
+  tenants: [
+    {
+      id: 't-101',
+      name: 'John Kamau',
+      email: 'john.kamau@example.com',
+      phone: '+254 712 345 678',
+      unitId: 'u-4b',
+      unitNumber: 'Unit 4B',
+      propertyName: 'Emerald Heights Luxury Residences',
+      rentAmount: 48000,
+      depositAmount: 48000,
+      balanceDue: 0,
+      paymentStatus: 'paid',
+      leaseStart: '2025-11-01',
+      leaseEnd: '2026-10-31',
+      emergencyContact: { name: 'Grace Wambui', phone: '+254 722 112 233', relationship: 'Spouse' },
+      vehiclePlate: 'KDK 892M',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
+    },
+    {
+      id: 't-102',
+      name: 'Sarah Mutua',
+      email: 'sarah.mutua@example.com',
+      phone: '+254 723 456 789',
+      unitId: 'u-2a',
+      unitNumber: 'Unit 2A',
+      propertyName: 'Emerald Heights Luxury Residences',
+      rentAmount: 48000,
+      depositAmount: 48000,
+      balanceDue: 48000,
+      paymentStatus: 'due',
+      leaseStart: '2025-08-15',
+      leaseEnd: '2026-08-14',
+      emergencyContact: { name: 'Daniel Mutua', phone: '+254 733 998 877', relationship: 'Brother' },
+      vehiclePlate: 'KDF 412X',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+    },
+    {
+      id: 't-103',
+      name: 'David Omondi',
+      email: 'david.omondi@example.com',
+      phone: '+254 734 567 890',
+      unitId: 'u-1c',
+      unitNumber: 'Unit 1C',
+      propertyName: 'Emerald Heights Luxury Residences',
+      rentAmount: 38000,
+      depositAmount: 38000,
+      balanceDue: 76000,
+      paymentStatus: 'overdue',
+      leaseStart: '2025-06-01',
+      leaseEnd: '2026-05-31',
+      emergencyContact: { name: 'Mary Achieng', phone: '+254 711 556 677', relationship: 'Sister' },
+      vehiclePlate: 'KCL 190P',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop'
+    }
+  ],
+  units: [
+    { id: 'u-1a', unitNumber: 'Unit 1A', propertyName: 'Emerald Heights Residences', floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 720, rentAmount: 38000, depositAmount: 38000, status: 'vacant' },
+    { id: 'u-1b', unitNumber: 'Unit 1B', propertyName: 'Emerald Heights Residences', floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 720, rentAmount: 38000, depositAmount: 38000, status: 'vacant' },
+    { id: 'u-1c', unitNumber: 'Unit 1C', propertyName: 'Emerald Heights Residences', floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 750, rentAmount: 38000, depositAmount: 38000, status: 'occupied', currentTenantId: 't-103', currentTenantName: 'David Omondi' },
+    { id: 'u-2a', unitNumber: 'Unit 2A', propertyName: 'Emerald Heights Residences', floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 1150, rentAmount: 48000, depositAmount: 48000, status: 'occupied', currentTenantId: 't-102', currentTenantName: 'Sarah Mutua' },
+    { id: 'u-2b', unitNumber: 'Unit 2B', propertyName: 'Emerald Heights Residences', floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 1150, rentAmount: 48000, depositAmount: 48000, status: 'vacant' },
+    { id: 'u-3c', unitNumber: 'Unit 3C', propertyName: 'Emerald Heights Residences', floor: 3, bedrooms: 3, bathrooms: 3, squareFeet: 1600, rentAmount: 65000, depositAmount: 65000, status: 'vacant' },
+    { id: 'u-4b', unitNumber: 'Unit 4B', propertyName: 'Emerald Heights Residences', floor: 4, bedrooms: 2, bathrooms: 2, squareFeet: 1150, rentAmount: 48000, depositAmount: 48000, status: 'occupied', currentTenantId: 't-101', currentTenantName: 'John Kamau' },
+    { id: 'u-5a', unitNumber: 'Unit 5A (Penthouse)', propertyName: 'Emerald Heights Residences', floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1850, rentAmount: 85000, depositAmount: 85000, status: 'maintenance' }
+  ],
+  payments: [
+    { id: 'pay-001', receiptNumber: 'TH-REC-2026-0812', unitNumber: 'Unit 4B', tenantName: 'John Kamau', tenantPhone: '+254 712 345 678', amount: 48000, type: 'rent', method: 'mpesa', transactionRef: 'QKD8921KL9', invoiceMonth: 'August 2026', status: 'completed', date: '2026-08-04 10:24:15' }
+  ],
+  maintenanceTickets: [
+    { id: 'tk-101', ticketNumber: 'MT-2026-042', unitNumber: 'Unit 4B', tenantName: 'John Kamau', tenantPhone: '+254 712 345 678', category: 'plumbing', title: 'Master Bathroom Tap Leaking', description: 'Mixer tap dripping in ensuite.', priority: 'medium', status: 'in_progress', assignedTechnician: 'Peter Mwangi', technicianPhone: '+254 722 445 566', reportedDate: '2026-08-20' }
+  ],
+  announcements: [
+    { id: 'ann-1', title: 'Routine Water Tank Cleaning', content: 'Water supply to tanks will undergo maintenance on Saturday, Aug 29.', category: 'utility', date: '2026-08-22', author: 'Estate Management', isUrgent: true }
+  ],
+  gatePasses: [
+    { id: 'gp-1', passCode: 'GP-8924', visitorName: 'Brian Mutiso (Delivery)', visitorPhone: '+254 711 223 344', unitNumber: 'Unit 4B', validDate: '2026-08-24', status: 'active', createdDate: '08:30 AM' }
+  ]
+};
+
 const initializeDb = () => {
-  if (!fs.existsSync(DB_FILE)) {
-    const initialData = {
-      tenants: [],
-      units: [],
-      payments: [],
-      maintenanceTickets: [],
-      announcements: [],
-      gatePasses: []
-    };
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
+  if (!fs.existsSync(DB_FILE) || fs.readFileSync(DB_FILE, 'utf8').trim() === '{}' || fs.readFileSync(DB_FILE, 'utf8').trim() === '{"tenants":[],"units":[],"payments":[],"maintenanceTickets":[],"announcements":[],"gatePasses":[]}') {
+    fs.writeFileSync(DB_FILE, JSON.stringify(initialSeedData, null, 2));
   }
 };
 
@@ -33,9 +106,11 @@ initializeDb();
 
 const getDb = () => {
   try {
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    if (!data.tenants || data.tenants.length === 0) return initialSeedData;
+    return data;
   } catch (err) {
-    return {};
+    return initialSeedData;
   }
 };
 
