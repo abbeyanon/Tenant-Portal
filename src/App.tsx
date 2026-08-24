@@ -15,6 +15,7 @@ import { AddPaymentEntryModal } from './components/AddPaymentEntryModal';
 import { AddUserModal } from './components/AddUserModal';
 import { BulkImportTenantsModal } from './components/BulkImportTenantsModal';
 import { ShareInvoiceModal } from './components/ShareInvoiceModal';
+import { ERPNextInvoiceViewModal } from './components/ERPNextInvoiceViewModal';
 import { ToastContainer } from './components/ToastContainer';
 
 import { DashboardPage } from './pages/DashboardPage';
@@ -51,7 +52,9 @@ export const App: React.FC = () => {
     isShareModalOpen,
     setIsShareModalOpen,
     shareDocData,
-    shareDocType
+    shareDocType,
+    viewingInvoice,
+    setViewingInvoice
   } = useTenant();
 
   return (
@@ -114,6 +117,11 @@ export const App: React.FC = () => {
         onClose={() => setIsShareModalOpen(false)}
         documentData={shareDocData}
         type={shareDocType}
+      />
+      <ERPNextInvoiceViewModal
+        isOpen={Boolean(viewingInvoice)}
+        onClose={() => setViewingInvoice(null)}
+        invoice={viewingInvoice}
       />
       <ToastContainer />
     </div>

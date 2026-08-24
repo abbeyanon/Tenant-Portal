@@ -16,9 +16,11 @@ import {
   PlusCircle,
   Download,
   Share2,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import { SalesInvoice } from '../types';
 
 export const AccountingPage: React.FC = () => {
   const {
@@ -33,7 +35,8 @@ export const AccountingPage: React.FC = () => {
     setIsAddPaymentEntryModalOpen,
     openShareModal,
     deleteSalesInvoice,
-    deletePaymentEntry
+    deletePaymentEntry,
+    setViewingInvoice
   } = useTenant();
 
   const [activeTab, setActiveTab] = useState<'invoices' | 'payments' | 'gl'>('invoices');
@@ -110,7 +113,7 @@ export const AccountingPage: React.FC = () => {
               Property Accounts & General Ledger
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
-              Bill tenants with Sales Invoices, reconcile M-Pesa Payment Entries, and audit double-entry General Ledger postings.
+              Bill tenants with Sales Invoices (Rent + Water meter billing), reconcile M-Pesa Payment Entries, and audit double-entry General Ledger postings.
             </p>
           </div>
 
@@ -120,7 +123,7 @@ export const AccountingPage: React.FC = () => {
               className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-md"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Create Sales Invoice</span>
+              <span>+ Create Sales Invoice (Rent + Water)</span>
             </button>
 
             <button
@@ -268,9 +271,17 @@ export const AccountingPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {salesInvoices.map((inv) => (
                     <tr key={inv.id} className="text-slate-700 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-dark-850/50 transition">
-                      <td className="py-3.5 font-mono font-bold text-brand-600">{inv.invoiceNumber}</td>
+                      <td className="py-3.5 font-mono font-bold">
+                        <button
+                          onClick={() => setViewingInvoice(inv)}
+                          className="text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{inv.invoiceNumber}</span>
+                        </button>
+                      </td>
                       <td className="py-3.5 font-semibold text-slate-900 dark:text-white">{inv.customerName}</td>
-                      <td className="py-3.5 font-bold">{inv.unitNumber}</td>
+                      <td className="py-3.5 font-bold text-purple-600">{inv.unitNumber}</td>
                       <td className="py-3.5 font-bold">{formatCurrency(inv.grandTotal)}</td>
                       <td className="py-3.5 font-bold text-rose-600">{formatCurrency(inv.outstandingAmount)}</td>
                       <td className="py-3.5">
@@ -288,13 +299,23 @@ export const AccountingPage: React.FC = () => {
                       <td className="py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => setViewingInvoice(inv)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1"
+                            title="View ERPNext Tax Invoice"
+                          >
+                            <Printer className="w-3 h-3" />
+                            <span>Print Format</span>
+                          </button>
+
+                          <button
                             onClick={() => openShareModal(inv, 'invoice')}
                             className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-[11px] font-bold flex items-center gap-1"
-                            title="Share / Print Invoice"
+                            title="Share / Send Invoice"
                           >
                             <Share2 className="w-3 h-3" />
                             <span>Share</span>
                           </button>
+
                           <button
                             onClick={() => deleteSalesInvoice(inv.id)}
                             className="p-1 rounded-lg text-slate-400 hover:text-rose-600"

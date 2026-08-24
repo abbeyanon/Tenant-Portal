@@ -33,6 +33,7 @@ import {
   initialSystemUsers,
   initialExpenses
 } from '../data/mockData';
+import { numberToKenyanShillings } from '../utils/numberToWords';
 
 interface Toast {
   id: string;
@@ -80,11 +81,15 @@ interface TenantContextType {
   paymentEntries: PaymentEntry[];
   glEntries: GLEntry[];
   expenses: ExpenseEntry[];
-  createSalesInvoice: (invoiceData: Omit<SalesInvoice, 'id' | 'invoiceNumber' | 'status' | 'postingDate' | 'incomeAccount' | 'costCenter' | 'outstandingAmount'>) => void;
+  createSalesInvoice: (invoiceData: any) => void;
   createPaymentEntry: (peData: Omit<PaymentEntry, 'id' | 'voucherNumber' | 'postingDate'>) => void;
   deleteSalesInvoice: (id: string) => void;
   deletePaymentEntry: (id: string) => void;
   addExpense: (exp: Omit<ExpenseEntry, 'id' | 'voucherNo' | 'postingDate'>) => void;
+
+  // ERPNext Invoice Viewer
+  viewingInvoice: SalesInvoice | null;
+  setViewingInvoice: (invoice: SalesInvoice | null) => void;
 
   // Tenant Editing & Deleting
   updateTenant: (tenantId: string, updatedData: Partial<Tenant>) => void;
@@ -297,6 +302,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
+  const [viewingInvoice, setViewingInvoice] = useState<SalesInvoice | null>(null);
+
   const [documents] = useState<PropertyDocument[]>(initialDocuments);
   const [stats, setStats] = useState<PropertyStats>(initialStats);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -442,7 +449,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // Add Property
   const addProperty = (propData: Omit<Property, 'id'>) => {
     const newProp: Property = {
       ...propData,
@@ -474,29 +480,34 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // =========================================================================
-  // ERPNext SALES INVOICE & BILLING CREATION
+  // ERPNext SALES INVOICE CREATION
   // =========================================================================
-  const createSalesInvoice = (
-    invoiceData: Omit<SalesInvoice, 'id' | 'invoiceNumber' | 'status' | 'postingDate' | 'incomeAccount' | 'costCenter' | 'outstandingAmount'>
-  ) => {
+  const createSalesInvoice = (invoiceData: any) => {
     const now = new Date();
     const formattedDate = now.toISOString().split('T')[0];
     const invoiceNumber = `ACC-SINV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const inWords = invoiceData.inWords || numberToKenyanShillings(invoiceData.grandTotal);
 
     const newInvoice: SalesInvoice = {
+      companyName: 'EMERALD HEIGHTS PROPERTY MANAGEMENT LTD',
+      companyPin: 'P051982734Z',
+      companyAddress: 'P.O. Box 48291 - 00100, Ngong Road, Nairobi',
       ...invoiceData,
       id: 'sinv-' + Date.now(),
       invoiceNumber,
       status: 'Unpaid',
       postingDate: formattedDate,
+      netTotal: invoiceData.grandTotal,
+      taxAmount: 0,
       outstandingAmount: invoiceData.grandTotal,
+      inWords,
       incomeAccount: '4110 - Rental Income - Emerald Heights',
       costCenter: 'Emerald Heights - Operations'
     };
 
     setSalesInvoices((prev) => [newInvoice, ...prev]);
 
-    // 1. Post General Ledger (GL) Debit & Credit entries
+    // Dual GL entries
     const glDebit: GLEntry = {
       id: 'gl-' + Date.now() + '-dr',
       voucherType: 'Sales Invoice',
@@ -505,7 +516,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       debit: newInvoice.grandTotal,
       credit: 0,
       postingDate: formattedDate,
-      remarks: `Sales Invoice billing for ${newInvoice.unitNumber}`
+      remarks: `Sales Invoice billing (Rent & Water) for ${newInvoice.unitNumber}`
     };
 
     const glCredit: GLEntry = {
@@ -516,12 +527,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       debit: 0,
       credit: newInvoice.grandTotal,
       postingDate: formattedDate,
-      remarks: `Rental Income recognized: ${newInvoice.remarks || invoiceNumber}`
+      remarks: `Rental & Water Revenue recognized: ${newInvoice.remarks || invoiceNumber}`
     };
 
     setGlEntries((prev) => [glDebit, glCredit, ...prev]);
 
-    // 2. Update tenant balance due
+    // Update tenant balance due
     setAllTenants((prev) =>
       prev.map((t) =>
         t.unitNumber === newInvoice.unitNumber
@@ -537,7 +548,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'success',
       title: 'ERPNext Sales Invoice Issued 🧾',
-      message: `Invoice #${invoiceNumber} for ${formatCurrency(newInvoice.grandTotal)} posted to Debtors ledger.`
+      message: `Invoice #${invoiceNumber} for ${formatCurrency(newInvoice.grandTotal)} (Rent + Water) posted to ledger.`
     });
   };
 
@@ -569,7 +580,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setPaymentEntries((prev) => [newPE, ...prev]);
 
-    // 1. Post Dual GL Entries
+    // Dual GL Entries
     const glDebit: GLEntry = {
       id: 'gl-' + Date.now() + '-dr',
       voucherType: 'Payment Entry',
@@ -594,7 +605,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setGlEntries((prev) => [glDebit, glCredit, ...prev]);
 
-    // 2. Mark matching Sales Invoice as Paid or reduce outstanding amount
+    // Mark matching Sales Invoice as Paid or reduce outstanding amount
     setSalesInvoices((prev) =>
       prev.map((inv) =>
         inv.unitNumber === newPE.unitNumber
@@ -607,7 +618,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       )
     );
 
-    // 3. Update Tenant balance due
+    // Update Tenant balance due
     setAllTenants((prev) =>
       prev.map((t) => {
         if (t.unitNumber === newPE.unitNumber) {
@@ -649,7 +660,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     setExpenses((prev) => [newExp, ...prev]);
 
-    // GL Posting for Expense
     const glDebit: GLEntry = {
       id: 'gl-' + Date.now() + '-dr',
       voucherType: 'Expense Entry',
@@ -679,9 +689,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // =========================================================================
-  // TENANT EDIT, DELETE & BULK IMPORT
-  // =========================================================================
+  // Tenant Editing & Deleting
   const updateTenant = (tenantId: string, updatedData: Partial<Tenant>) => {
     setAllTenants((prev) =>
       prev.map((t) => (t.id === tenantId ? { ...t, ...updatedData } : t))
@@ -696,7 +704,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deleteTenant = (tenantId: string) => {
     const target = allTenants.find((t) => t.id === tenantId);
     if (target) {
-      // Mark matching unit as vacant
       setUnits((prev) =>
         prev.map((u) =>
           u.unitNumber === target.unitNumber
@@ -723,7 +730,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setAllTenants((prev) => [...newTenants, ...prev]);
 
-    // Update units to occupied
     newTenants.forEach((nt) => {
       setUnits((prev) => {
         const match = prev.find((u) => u.unitNumber === nt.unitNumber);
@@ -803,7 +809,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // Share Modal Opener
   const openShareModal = (doc: any, type: 'invoice' | 'receipt') => {
     setShareDocData(doc);
     setShareDocType(type);
@@ -841,7 +846,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setPayments((prev) => [newPayment, ...prev]);
 
-    // Create matching ERPNext Payment Entry
+    // Matching ERPNext Payment Entry
     createPaymentEntry({
       partyName: stkPaymentDetails.tenantName,
       tenantPhone: stkPaymentDetails.phone,
@@ -925,7 +930,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // Gate Passes
   const createGatePass = (visitorName: string, visitorPhone: string, unitNumber: string): GatePass => {
     const passCode = `GP-${Math.floor(1000 + Math.random() * 9000)}`;
     const newPass: GatePass = {
@@ -948,7 +952,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return newPass;
   };
 
-  // Announcements
   const broadcastAnnouncement = (data: Omit<Announcement, 'id' | 'date'>) => {
     const newAnn: Announcement = {
       ...data,
@@ -1014,6 +1017,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteSalesInvoice,
         deletePaymentEntry,
         addExpense,
+        viewingInvoice,
+        setViewingInvoice,
         updateTenant,
         deleteTenant,
         bulkImportTenants,

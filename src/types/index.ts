@@ -56,6 +56,8 @@ export interface Tenant {
     relationship: string;
   };
   vehiclePlate?: string;
+  waterMeterNumber?: string;
+  lastWaterReading?: number;
   avatar?: string;
 }
 
@@ -73,33 +75,56 @@ export interface Unit {
   status: 'occupied' | 'vacant' | 'maintenance';
   currentTenantId?: string;
   currentTenantName?: string;
+  waterMeterNumber?: string;
 }
 
 export interface InvoiceItem {
   id: string;
   itemCode: string;
   itemName: string;
+  description?: string;
+  meterPrevious?: number;
+  meterCurrent?: number;
+  meterUnits?: number;
   rate: number;
   qty: number;
   amount: number;
+  incomeAccount?: string;
+  costCenter?: string;
 }
 
 export interface SalesInvoice {
   id: string;
   invoiceNumber: string;
+  companyName: string;
+  companyPin?: string;
+  companyAddress?: string;
   customerName: string;
+  customerAddress?: string;
   tenantPhone?: string;
   unitNumber: string;
   propertyId?: string;
-  propertyName?: string;
+  propertyName: string;
+  items: InvoiceItem[];
+  netTotal: number;
+  taxAmount: number;
   grandTotal: number;
   outstandingAmount: number;
+  inWords?: string;
   status: 'Paid' | 'Unpaid' | 'Overdue';
   postingDate: string;
+  postingTime?: string;
   dueDate: string;
   incomeAccount: string;
   costCenter: string;
-  items?: InvoiceItem[];
+  paymentTerms?: string;
+  bankDetails?: {
+    bankName: string;
+    accountNumber: string;
+    branch: string;
+    paybillNumber: string;
+    accountReference: string;
+  };
   remarks?: string;
 }
 
@@ -115,6 +140,7 @@ export interface PaymentEntry {
   paidToAccount: string;
   referenceNo: string;
   postingDate: string;
+  postingTime?: string;
   remarks: string;
 }
 
