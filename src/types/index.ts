@@ -1,4 +1,4 @@
-export type UserRole = 'tenant' | 'landlord' | 'manager';
+export type UserRole = 'tenant' | 'landlord' | 'manager' | 'accountant' | 'caretaker' | 'admin';
 
 export interface Property {
   id: string;
@@ -9,6 +9,19 @@ export interface Property {
   caretakerName: string;
   caretakerPhone: string;
   image?: string;
+}
+
+export interface SystemUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  phone?: string;
+  propertyName?: string;
+  unitNumber?: string;
+  status: 'Active' | 'Inactive' | 'Pending Reset';
+  lastLogin?: string;
+  avatar?: string;
 }
 
 export interface UserAccount {
@@ -60,6 +73,72 @@ export interface Unit {
   status: 'occupied' | 'vacant' | 'maintenance';
   currentTenantId?: string;
   currentTenantName?: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  rate: number;
+  qty: number;
+  amount: number;
+}
+
+export interface SalesInvoice {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  tenantPhone?: string;
+  unitNumber: string;
+  propertyId?: string;
+  propertyName?: string;
+  grandTotal: number;
+  outstandingAmount: number;
+  status: 'Paid' | 'Unpaid' | 'Overdue';
+  postingDate: string;
+  dueDate: string;
+  incomeAccount: string;
+  costCenter: string;
+  items?: InvoiceItem[];
+  remarks?: string;
+}
+
+export interface PaymentEntry {
+  id: string;
+  voucherNumber: string;
+  partyName: string;
+  tenantPhone?: string;
+  unitNumber: string;
+  propertyName?: string;
+  paidAmount: number;
+  modeOfPayment: 'M-Pesa' | 'Card' | 'Bank Transfer' | 'Cheque' | 'Cash';
+  paidToAccount: string;
+  referenceNo: string;
+  postingDate: string;
+  remarks: string;
+}
+
+export interface GLEntry {
+  id: string;
+  voucherType: 'Sales Invoice' | 'Payment Entry' | 'Expense Entry';
+  voucherNo: string;
+  account: string;
+  debit: number;
+  credit: number;
+  postingDate: string;
+  remarks: string;
+}
+
+export interface ExpenseEntry {
+  id: string;
+  voucherNo: string;
+  category: 'Utilities (Water/Power)' | 'Security Services' | 'Repairs & Maintenance' | 'Estate Cleaning' | 'Management Fees';
+  propertyName: string;
+  amount: number;
+  paidTo: string;
+  expenseAccount: string;
+  postingDate: string;
+  remarks: string;
 }
 
 export interface PaymentRecord {
@@ -139,45 +218,4 @@ export interface PropertyStats {
   totalCollectedThisMonth: number;
   totalPendingArrears: number;
   activeMaintenanceTickets: number;
-}
-
-// ERPNext Accounts
-export interface SalesInvoice {
-  id: string;
-  invoiceNumber: string;
-  customerName: string;
-  unitNumber: string;
-  propertyName?: string;
-  grandTotal: number;
-  outstandingAmount: number;
-  status: 'Paid' | 'Unpaid' | 'Overdue';
-  postingDate: string;
-  dueDate: string;
-  incomeAccount: string;
-  costCenter: string;
-}
-
-export interface PaymentEntry {
-  id: string;
-  voucherNumber: string;
-  partyName: string;
-  unitNumber: string;
-  propertyName?: string;
-  paidAmount: number;
-  modeOfPayment: 'M-Pesa' | 'Card' | 'Bank Transfer' | 'Cash';
-  paidToAccount: string;
-  referenceNo: string;
-  postingDate: string;
-  remarks: string;
-}
-
-export interface GLEntry {
-  id: string;
-  voucherType: 'Sales Invoice' | 'Payment Entry';
-  voucherNo: string;
-  account: string;
-  debit: number;
-  credit: number;
-  postingDate: string;
-  remarks: string;
 }

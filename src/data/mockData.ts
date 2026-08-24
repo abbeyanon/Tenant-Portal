@@ -432,3 +432,98 @@ export const initialGLEntries: GLEntry[] = [
     remarks: 'M-Pesa rent receipt QKD8921KL9'
   }
 ];
+
+// System User Accounts
+export const initialSystemUsers: SystemUser[] = [
+  {
+    id: 'usr-1',
+    name: 'John Kamau',
+    email: 'john.kamau@example.com',
+    phone: '+254 712 345 678',
+    role: 'tenant',
+    propertyName: 'Emerald Heights Luxury Residences',
+    unitNumber: 'Unit 4B',
+    status: 'Active',
+    lastLogin: '2026-08-24 13:45:00',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
+  },
+  {
+    id: 'usr-2',
+    name: 'Faith Chebet (Estate Director)',
+    email: 'admin@emeraldheights.co.ke',
+    phone: '+254 759 508 348',
+    role: 'manager',
+    propertyName: 'Emerald Heights Luxury Residences',
+    status: 'Active',
+    lastLogin: '2026-08-24 13:50:00',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+  },
+  {
+    id: 'usr-3',
+    name: 'Patrick Musyoka (Head Accountant)',
+    email: 'accounts@emeraldheights.co.ke',
+    phone: '+254 722 888 999',
+    role: 'accountant',
+    propertyName: 'Emerald Heights Luxury Residences',
+    status: 'Active',
+    lastLogin: '2026-08-24 10:15:00'
+  },
+  {
+    id: 'usr-4',
+    name: 'Dennis Ochieng (Caretaker)',
+    email: 'dennis.caretaker@emeraldheights.co.ke',
+    phone: '+254 722 000 119',
+    role: 'caretaker',
+    propertyName: 'Sapphire Palms Executive Suites',
+    status: 'Active',
+    lastLogin: '2026-08-23 16:30:00'
+  }
+];
+
+// Operational Expenses
+export const initialExpenses: ExpenseEntry[] = [
+  {
+    id: 'exp-001',
+    voucherNo: 'ACC-EXP-2026-0041',
+    category: 'Security Services',
+    propertyName: 'Emerald Heights Luxury Residences',
+    amount: 85000,
+    paidTo: 'G4S Secure Kenya Ltd',
+    expenseAccount: '5110 - Security Guard Patrol Services',
+    postingDate: '2026-08-01',
+    remarks: 'Monthly 24/7 Security guard deployment'
+  },
+  {
+    id: 'exp-002',
+    voucherNo: 'ACC-EXP-2026-0042',
+    category: 'Utilities (Water/Power)',
+    propertyName: 'Emerald Heights Luxury Residences',
+    amount: 34500,
+    paidTo: 'Kenya Power & Lighting Co (KPLC)',
+    expenseAccount: '5120 - Borehole & Common Area Power',
+    postingDate: '2026-08-05',
+    remarks: 'Common area lighting & main pump power'
+  },
+  {
+    id: 'exp-003',
+    voucherNo: 'ACC-EXP-2026-0043',
+    category: 'Repairs & Maintenance',
+    propertyName: 'Emerald Heights Luxury Residences',
+    amount: 28000,
+    paidTo: 'Schindler Lifts East Africa',
+    expenseAccount: '5130 - Lift & Elevators Bi-Monthly Service',
+    postingDate: '2026-08-10',
+    remarks: 'Routine preventative elevator maintenance'
+  },
+  {
+    id: 'exp-004',
+    voucherNo: 'ACC-EXP-2026-0044',
+    category: 'Estate Cleaning',
+    propertyName: 'Emerald Heights Luxury Residences',
+    amount: 18000,
+    paidTo: 'SparkleClean Facility Care',
+    expenseAccount: '5140 - Waste Management & Hygiene',
+    postingDate: '2026-08-15',
+    remarks: 'Compound cleaning and trash collection'
+  }
+];

@@ -20,7 +20,8 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
-  UserCheck
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -50,11 +51,11 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
               <PhoneCall className="w-3.5 h-3.5 animate-bounce" />
-              <span>Caretaker & Security Hotline: <strong className="text-white">+254 759 508 348</strong></span>
+              <span>Caretaker Hotline: <strong className="text-white">+254 759 508 348</strong></span>
             </div>
             <span className="hidden md:inline text-slate-600">•</span>
             <span className="hidden md:inline text-slate-300">
-              {currentRole === 'tenant' ? 'Emerald Heights (Unit 4B)' : 'Multi-Property Management'}
+              {currentRole === 'tenant' ? `${activeTenant.propertyName} (${activeTenant.unitNumber})` : 'Multi-Property Management'}
             </span>
           </div>
 
@@ -99,7 +100,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Main Navigation Bar (Clean & Context-Aware) */}
+      {/* 2. Main Navigation Bar */}
       <div className="max-w-[1550px] mx-auto px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -120,7 +121,7 @@ export const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Nav Links (Role-Specific) */}
-          <nav className="hidden lg:flex items-center gap-1.5">
+          <nav className="hidden xl:flex items-center gap-1">
             {currentRole === 'tenant' ? (
               // === TENANT NAVIGATION (Simple & Focused) ===
               <>
@@ -257,14 +258,27 @@ export const Header: React.FC = () => {
                 </Link>
 
                 <Link
-                  to="/maintenance"
-                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                    isActive('/maintenance')
-                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  to="/reports"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/reports')
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-dark-850'
                   }`}
                 >
-                  Maintenance
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <span>Reports</span>
+                </Link>
+
+                <Link
+                  to="/users"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/users')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <Shield className="w-4 h-4 text-brand-600" />
+                  <span>Users</span>
                 </Link>
               </>
             )}
@@ -357,7 +371,7 @@ export const Header: React.FC = () => {
             {/* Mobile Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
+              className="xl:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -365,9 +379,9 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Mobile Navigation Drawer (Role-Specific) */}
+      {/* 3. Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
+        <div className="xl:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
           {currentRole === 'tenant' ? (
             <div className="grid grid-cols-2 gap-2 text-xs font-bold">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
@@ -406,8 +420,11 @@ export const Header: React.FC = () => {
               <Link to="/accounting" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
                 ERPNext Accounts
               </Link>
-              <Link to="/maintenance" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-                Maintenance
+              <Link to="/reports" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                Reports & P&L
+              </Link>
+              <Link to="/users" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold">
+                Users & Roles
               </Link>
             </div>
           )}

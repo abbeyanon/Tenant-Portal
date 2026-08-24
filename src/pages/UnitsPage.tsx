@@ -11,9 +11,14 @@ import {
   Clock,
   AlertTriangle,
   Users,
-  DollarSign
+  DollarSign,
+  Download,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { Unit } from '../types';
+import { exportToCSV } from '../utils/exportUtils';
+import { EditUnitModal } from '../components/EditUnitModal';
 
 export const UnitsPage: React.FC = () => {
   const {
@@ -23,6 +28,7 @@ export const UnitsPage: React.FC = () => {
     formatCurrency,
     addUnit,
     updateUnitStatus,
+    deleteUnit,
     setIsAddUnitModalOpen,
     setIsAddTenantModalOpen,
     setPreselectedUnitNumber,
@@ -32,11 +38,10 @@ export const UnitsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'vacant' | 'occupied' | 'maintenance'>('all');
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
 
   const filteredUnits = units.filter((u) => {
-    const matchesProperty =
-      selectedPropertyId === 'all' || u.propertyId === selectedPropertyId;
-
+    const matchesProperty = selectedPropertyId === 'all' || u.propertyId === selectedPropertyId;
     const matchesSearch =
       u.unitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.propertyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -49,6 +54,22 @@ export const UnitsPage: React.FC = () => {
   const vacantCount = filteredUnits.filter((u) => u.status === 'vacant').length;
   const occupiedCount = filteredUnits.filter((u) => u.status === 'occupied').length;
   const maintenanceCount = filteredUnits.filter((u) => u.status === 'maintenance').length;
+
+  const handleExportUnits = () => {
+    const data = filteredUnits.map((u) => ({
+      UnitNumber: u.unitNumber,
+      Property: u.propertyName,
+      Floor: u.floor,
+      Bedrooms: u.bedrooms,
+      Bathrooms: u.bathrooms,
+      SquareFeet: u.squareFeet,
+      MonthlyRent: u.rentAmount,
+      SecurityDeposit: u.depositAmount,
+      Status: u.status.toUpperCase(),
+      Tenant: u.currentTenantName || 'Vacant'
+    }));
+    exportToCSV('units_inventory.csv', data);
+  };
 
   const handleAssignTenantToUnit = (unit: Unit) => {
     setPreselectedUnitNumber(unit.unitNumber);
@@ -73,13 +94,23 @@ export const UnitsPage: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setIsAddUnitModalOpen(true)}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center gap-2 transition transform hover:-translate-y-0.5 self-start md:self-auto"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Add New Unit</span>
-          </button>
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={handleExportUnits}
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 shadow-sm"
+            >
+              <Download className="w-4 h-4 text-blue-600" />
+              <span>Export CSV</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddUnitModalOpen(true)}
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center gap-2 transition"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Add New Unit</span>
+            </button>
+          </div>
         </div>
 
         {/* Property Filter Bar */}
@@ -264,21 +295,32 @@ export const UnitsPage: React.FC = () => {
                 )}
 
                 <button
-                  onClick={() => updateUnitStatus(u.id, u.status === 'maintenance' ? 'vacant' : 'maintenance')}
-                  className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition ${
-                    u.status === 'maintenance'
-                      ? 'bg-amber-500 text-white border-amber-600'
-                      : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                  }`}
-                  title="Toggle maintenance"
+                  onClick={() => setEditingUnit(u)}
+                  className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-bold"
+                  title="Edit Unit"
                 >
-                  {u.status === 'maintenance' ? 'Exit Maint.' : 'Maint.'}
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => deleteUnit(u.id)}
+                  className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold"
+                  title="Delete Unit"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Edit Unit Modal */}
+      <EditUnitModal
+        isOpen={Boolean(editingUnit)}
+        onClose={() => setEditingUnit(null)}
+        unit={editingUnit}
+      />
     </div>
   );
 };

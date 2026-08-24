@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserRole,
   UserAccount,
+  SystemUser,
   Property,
   Tenant,
   Unit,
@@ -13,7 +14,8 @@ import {
   PropertyStats,
   SalesInvoice,
   PaymentEntry,
-  GLEntry
+  GLEntry,
+  ExpenseEntry
 } from '../types';
 import {
   initialProperties,
@@ -27,7 +29,9 @@ import {
   initialStats,
   initialSalesInvoices,
   initialPaymentEntries,
-  initialGLEntries
+  initialGLEntries,
+  initialSystemUsers,
+  initialExpenses
 } from '../data/mockData';
 
 interface Toast {
@@ -52,6 +56,13 @@ interface TenantContextType {
   setSelectedPropertyId: (id: string) => void;
   addProperty: (prop: Omit<Property, 'id'>) => void;
 
+  // System User Management (Admin)
+  users: SystemUser[];
+  addUser: (user: Omit<SystemUser, 'id'>) => void;
+  updateUserRole: (userId: string, newRole: UserRole) => void;
+  deleteUser: (userId: string) => void;
+  sendPasswordResetLink: (userId: string) => void;
+
   // Core Data
   activeTenant: Tenant;
   allTenants: Tenant[];
@@ -64,24 +75,32 @@ interface TenantContextType {
   stats: PropertyStats;
   toasts: Toast[];
 
-  // ERPNext Accounting
+  // ERPNext Accounting Module
   salesInvoices: SalesInvoice[];
   paymentEntries: PaymentEntry[];
   glEntries: GLEntry[];
+  expenses: ExpenseEntry[];
+  createSalesInvoice: (invoiceData: Omit<SalesInvoice, 'id' | 'invoiceNumber' | 'status' | 'postingDate' | 'incomeAccount' | 'costCenter' | 'outstandingAmount'>) => void;
+  createPaymentEntry: (peData: Omit<PaymentEntry, 'id' | 'voucherNumber' | 'postingDate'>) => void;
+  deleteSalesInvoice: (id: string) => void;
+  deletePaymentEntry: (id: string) => void;
+  addExpense: (exp: Omit<ExpenseEntry, 'id' | 'voucherNo' | 'postingDate'>) => void;
+
+  // Tenant Editing & Deleting
+  updateTenant: (tenantId: string, updatedData: Partial<Tenant>) => void;
+  deleteTenant: (tenantId: string) => void;
+  bulkImportTenants: (importedTenants: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>[]) => void;
+
+  // Unit Operations
+  addUnit: (unit: Omit<Unit, 'id'>) => void;
+  updateUnitStatus: (unitId: string, status: Unit['status']) => void;
+  deleteUnit: (unitId: string) => void;
 
   // STK Push Simulation Controller
   isStkModalOpen: boolean;
   setIsStkModalOpen: (open: boolean) => void;
   stkPaymentDetails: any | null;
-  triggerMpesaStkPush: (data: {
-    amount: number;
-    phone: string;
-    unitNumber: string;
-    propertyName?: string;
-    tenantName: string;
-    type: PaymentRecord['type'];
-    invoiceMonth: string;
-  }) => void;
+  triggerMpesaStkPush: (data: any) => void;
   confirmMpesaPayment: (confirmedDetails: any) => void;
 
   // Modals Controller
@@ -91,6 +110,20 @@ interface TenantContextType {
   setIsAddTenantModalOpen: (open: boolean) => void;
   isAddUnitModalOpen: boolean;
   setIsAddUnitModalOpen: (open: boolean) => void;
+  isAddSalesInvoiceModalOpen: boolean;
+  setIsAddSalesInvoiceModalOpen: (open: boolean) => void;
+  isAddPaymentEntryModalOpen: boolean;
+  setIsAddPaymentEntryModalOpen: (open: boolean) => void;
+  isAddUserModalOpen: boolean;
+  setIsAddUserModalOpen: (open: boolean) => void;
+  isBulkImportModalOpen: boolean;
+  setIsBulkImportModalOpen: (open: boolean) => void;
+  isShareModalOpen: boolean;
+  setIsShareModalOpen: (open: boolean) => void;
+  shareDocData: any | null;
+  shareDocType: 'invoice' | 'receipt';
+  openShareModal: (doc: any, type: 'invoice' | 'receipt') => void;
+
   isPayRentModalOpen: boolean;
   setIsPayRentModalOpen: (open: boolean) => void;
   isMaintenanceModalOpen: boolean;
@@ -104,7 +137,6 @@ interface TenantContextType {
   activeReceipt: PaymentRecord | null;
   setActiveReceipt: (receipt: PaymentRecord | null) => void;
 
-  // Operations
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   payRent: (paymentData: any) => Promise<any>;
@@ -115,8 +147,6 @@ interface TenantContextType {
   broadcastAnnouncement: (announcement: Omit<Announcement, 'id' | 'date'>) => void;
   addTenant: (tenant: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => void;
   sendPaymentReminder: (tenantId: string) => void;
-  addUnit: (unit: Omit<Unit, 'id'>) => void;
-  updateUnitStatus: (unitId: string, status: Unit['status']) => void;
   formatCurrency: (amount: number) => string;
 }
 
@@ -142,8 +172,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: 'John Kamau',
         email: 'john.kamau@example.com',
         role: 'tenant',
-        unitNumber: 'Unit 4B',
-        propertyName: 'Emerald Heights Luxury Residences'
+        unitNumber: 'Unit 4B'
       };
     }
   });
@@ -156,13 +185,22 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return (localStorage.getItem('tenanthub_role') as UserRole) || 'tenant';
   });
 
-  // Multi-Property State
+  // Properties & Users
   const [properties, setProperties] = useState<Property[]>(() => {
     try {
       const saved = localStorage.getItem('tenanthub_properties');
       return saved ? JSON.parse(saved) : initialProperties;
     } catch {
       return initialProperties;
+    }
+  });
+
+  const [users, setUsers] = useState<SystemUser[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_users');
+      return saved ? JSON.parse(saved) : initialSystemUsers;
+    } catch {
+      return initialSystemUsers;
     }
   });
 
@@ -250,6 +288,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
+  const [expenses, setExpenses] = useState<ExpenseEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_expenses');
+      return saved ? JSON.parse(saved) : initialExpenses;
+    } catch {
+      return initialExpenses;
+    }
+  });
+
   const [documents] = useState<PropertyDocument[]>(initialDocuments);
   const [stats, setStats] = useState<PropertyStats>(initialStats);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -258,6 +305,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
+  const [isAddSalesInvoiceModalOpen, setIsAddSalesInvoiceModalOpen] = useState(false);
+  const [isAddPaymentEntryModalOpen, setIsAddPaymentEntryModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareDocData, setShareDocData] = useState<any | null>(null);
+  const [shareDocType, setShareDocType] = useState<'invoice' | 'receipt'>('invoice');
+
   const [isPayRentModalOpen, setIsPayRentModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [isGatePassModalOpen, setIsGatePassModalOpen] = useState(false);
@@ -269,10 +324,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isStkModalOpen, setIsStkModalOpen] = useState(false);
   const [stkPaymentDetails, setStkPaymentDetails] = useState<any | null>(null);
 
-  const activeTenant = allTenants[0];
+  const activeTenant = allTenants[0] || initialTenants[0];
 
   useEffect(() => {
     localStorage.setItem('tenanthub_properties', JSON.stringify(properties));
+    localStorage.setItem('tenanthub_users', JSON.stringify(users));
     localStorage.setItem('tenanthub_tenants', JSON.stringify(allTenants));
     localStorage.setItem('tenanthub_units', JSON.stringify(units));
     localStorage.setItem('tenanthub_payments', JSON.stringify(payments));
@@ -280,7 +336,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem('tenanthub_sinv', JSON.stringify(salesInvoices));
     localStorage.setItem('tenanthub_pe', JSON.stringify(paymentEntries));
     localStorage.setItem('tenanthub_gl', JSON.stringify(glEntries));
-  }, [properties, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries]);
+    localStorage.setItem('tenanthub_expenses', JSON.stringify(expenses));
+  }, [properties, users, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries, expenses]);
 
   // Auth Methods
   const login = async (email: string, password?: string): Promise<boolean> => {
@@ -289,7 +346,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         id: 'usr-manager-1',
         name: 'Faith Chebet (Estate Director)',
         email,
-        role: 'landlord',
+        role: 'manager',
         avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
       };
       setCurrentUser(managerUser);
@@ -340,6 +397,51 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
+  // User Management
+  const addUser = (userData: Omit<SystemUser, 'id'>) => {
+    const newUser: SystemUser = {
+      ...userData,
+      id: 'usr-' + Date.now(),
+      lastLogin: 'Never'
+    };
+    setUsers((prev) => [...prev, newUser]);
+    addToast({
+      type: 'success',
+      title: 'User Account Created 👤',
+      message: `User ${newUser.name} registered as ${newUser.role.toUpperCase()}. Invitation link dispatched.`
+    });
+  };
+
+  const updateUserRole = (userId: string, newRole: UserRole) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+    );
+    addToast({
+      type: 'info',
+      title: 'User Role Updated',
+      message: `Permissions updated to ${newRole}.`
+    });
+  };
+
+  const deleteUser = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    addToast({
+      type: 'info',
+      title: 'User Account Removed',
+      message: 'User removed from access directory.'
+    });
+  };
+
+  const sendPasswordResetLink = (userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) return;
+    addToast({
+      type: 'success',
+      title: 'Password Reset Link Dispatched 📩',
+      message: `Secure reset link generated and sent to ${targetUser.email}.`
+    });
+  };
+
   // Add Property
   const addProperty = (propData: Omit<Property, 'id'>) => {
     const newProp: Property = {
@@ -351,7 +453,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'success',
       title: 'Property Registered 🏢',
-      message: `${newProp.name} (${newProp.location}) added to your portfolio.`
+      message: `${newProp.name} (${newProp.location}) added to portfolio.`
     });
   };
 
@@ -371,28 +473,350 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return `KES ${amount.toLocaleString()}`;
   };
 
-  // M-Pesa STK Push Trigger
-  const triggerMpesaStkPush = (data: {
-    amount: number;
-    phone: string;
-    unitNumber: string;
-    propertyName?: string;
-    tenantName: string;
-    type: PaymentRecord['type'];
-    invoiceMonth: string;
-  }) => {
-    setStkPaymentDetails(data);
-    setIsStkModalOpen(true);
-    setIsPayRentModalOpen(false);
+  // =========================================================================
+  // ERPNext SALES INVOICE & BILLING CREATION
+  // =========================================================================
+  const createSalesInvoice = (
+    invoiceData: Omit<SalesInvoice, 'id' | 'invoiceNumber' | 'status' | 'postingDate' | 'incomeAccount' | 'costCenter' | 'outstandingAmount'>
+  ) => {
+    const now = new Date();
+    const formattedDate = now.toISOString().split('T')[0];
+    const invoiceNumber = `ACC-SINV-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newInvoice: SalesInvoice = {
+      ...invoiceData,
+      id: 'sinv-' + Date.now(),
+      invoiceNumber,
+      status: 'Unpaid',
+      postingDate: formattedDate,
+      outstandingAmount: invoiceData.grandTotal,
+      incomeAccount: '4110 - Rental Income - Emerald Heights',
+      costCenter: 'Emerald Heights - Operations'
+    };
+
+    setSalesInvoices((prev) => [newInvoice, ...prev]);
+
+    // 1. Post General Ledger (GL) Debit & Credit entries
+    const glDebit: GLEntry = {
+      id: 'gl-' + Date.now() + '-dr',
+      voucherType: 'Sales Invoice',
+      voucherNo: invoiceNumber,
+      account: `1310 - Debtors / Accounts Receivable (${newInvoice.customerName})`,
+      debit: newInvoice.grandTotal,
+      credit: 0,
+      postingDate: formattedDate,
+      remarks: `Sales Invoice billing for ${newInvoice.unitNumber}`
+    };
+
+    const glCredit: GLEntry = {
+      id: 'gl-' + Date.now() + '-cr',
+      voucherType: 'Sales Invoice',
+      voucherNo: invoiceNumber,
+      account: '4110 - Rental Income - Emerald Heights',
+      debit: 0,
+      credit: newInvoice.grandTotal,
+      postingDate: formattedDate,
+      remarks: `Rental Income recognized: ${newInvoice.remarks || invoiceNumber}`
+    };
+
+    setGlEntries((prev) => [glDebit, glCredit, ...prev]);
+
+    // 2. Update tenant balance due
+    setAllTenants((prev) =>
+      prev.map((t) =>
+        t.unitNumber === newInvoice.unitNumber
+          ? {
+              ...t,
+              balanceDue: t.balanceDue + newInvoice.grandTotal,
+              paymentStatus: 'due'
+            }
+          : t
+      )
+    );
 
     addToast({
-      type: 'info',
-      title: 'STK Push Dispatched 📲',
-      message: `Prompt sent to ${data.phone}. Please authorize with your 4-digit PIN.`
+      type: 'success',
+      title: 'ERPNext Sales Invoice Issued 🧾',
+      message: `Invoice #${invoiceNumber} for ${formatCurrency(newInvoice.grandTotal)} posted to Debtors ledger.`
     });
   };
 
-  // M-Pesa STK Push Confirmation & Reconciliation
+  const deleteSalesInvoice = (id: string) => {
+    setSalesInvoices((prev) => prev.filter((i) => i.id !== id));
+    addToast({
+      type: 'info',
+      title: 'Sales Invoice Cancelled',
+      message: 'Invoice removed from active billing ledger.'
+    });
+  };
+
+  // =========================================================================
+  // ERPNext PAYMENT ENTRY CREATION
+  // =========================================================================
+  const createPaymentEntry = (
+    peData: Omit<PaymentEntry, 'id' | 'voucherNumber' | 'postingDate'>
+  ) => {
+    const now = new Date();
+    const formattedDate = now.toISOString().split('T')[0];
+    const voucherNumber = `ACC-PAY-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newPE: PaymentEntry = {
+      ...peData,
+      id: 'pe-' + Date.now(),
+      voucherNumber,
+      postingDate: formattedDate
+    };
+
+    setPaymentEntries((prev) => [newPE, ...prev]);
+
+    // 1. Post Dual GL Entries
+    const glDebit: GLEntry = {
+      id: 'gl-' + Date.now() + '-dr',
+      voucherType: 'Payment Entry',
+      voucherNo: voucherNumber,
+      account: newPE.paidToAccount,
+      debit: newPE.paidAmount,
+      credit: 0,
+      postingDate: formattedDate,
+      remarks: `Payment received Ref: ${newPE.referenceNo}`
+    };
+
+    const glCredit: GLEntry = {
+      id: 'gl-' + Date.now() + '-cr',
+      voucherType: 'Payment Entry',
+      voucherNo: voucherNumber,
+      account: `1310 - Debtors / Accounts Receivable (${newPE.partyName})`,
+      debit: 0,
+      credit: newPE.paidAmount,
+      postingDate: formattedDate,
+      remarks: `Debtor settlement against ${newPE.unitNumber}`
+    };
+
+    setGlEntries((prev) => [glDebit, glCredit, ...prev]);
+
+    // 2. Mark matching Sales Invoice as Paid or reduce outstanding amount
+    setSalesInvoices((prev) =>
+      prev.map((inv) =>
+        inv.unitNumber === newPE.unitNumber
+          ? {
+              ...inv,
+              status: inv.outstandingAmount <= newPE.paidAmount ? 'Paid' : inv.status,
+              outstandingAmount: Math.max(0, inv.outstandingAmount - newPE.paidAmount)
+            }
+          : inv
+      )
+    );
+
+    // 3. Update Tenant balance due
+    setAllTenants((prev) =>
+      prev.map((t) => {
+        if (t.unitNumber === newPE.unitNumber) {
+          const newBal = Math.max(0, t.balanceDue - newPE.paidAmount);
+          return {
+            ...t,
+            balanceDue: newBal,
+            paymentStatus: newBal === 0 ? 'paid' : t.paymentStatus
+          };
+        }
+        return t;
+      })
+    );
+
+    addToast({
+      type: 'success',
+      title: 'Payment Entry Reconciled 💰',
+      message: `Voucher #${voucherNumber} (${formatCurrency(newPE.paidAmount)}) posted to ${newPE.paidToAccount}.`
+    });
+  };
+
+  const deletePaymentEntry = (id: string) => {
+    setPaymentEntries((prev) => prev.filter((p) => p.id !== id));
+    addToast({
+      type: 'info',
+      title: 'Payment Entry Voided',
+      message: 'Payment voucher cancelled.'
+    });
+  };
+
+  // Expenses
+  const addExpense = (expData: Omit<ExpenseEntry, 'id' | 'voucherNo' | 'postingDate'>) => {
+    const voucherNo = `ACC-EXP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newExp: ExpenseEntry = {
+      ...expData,
+      id: 'exp-' + Date.now(),
+      voucherNo,
+      postingDate: new Date().toISOString().split('T')[0]
+    };
+    setExpenses((prev) => [newExp, ...prev]);
+
+    // GL Posting for Expense
+    const glDebit: GLEntry = {
+      id: 'gl-' + Date.now() + '-dr',
+      voucherType: 'Expense Entry',
+      voucherNo,
+      account: newExp.expenseAccount,
+      debit: newExp.amount,
+      credit: 0,
+      postingDate: newExp.postingDate,
+      remarks: newExp.remarks
+    };
+    const glCredit: GLEntry = {
+      id: 'gl-' + Date.now() + '-cr',
+      voucherType: 'Expense Entry',
+      voucherNo,
+      account: '1110 - KCB Operating Bank Account',
+      debit: 0,
+      credit: newExp.amount,
+      postingDate: newExp.postingDate,
+      remarks: `Disbursement to ${newExp.paidTo}`
+    };
+    setGlEntries((prev) => [glDebit, glCredit, ...prev]);
+
+    addToast({
+      type: 'success',
+      title: 'Operational Expense Logged 🧾',
+      message: `${formatCurrency(newExp.amount)} recorded for ${newExp.category}.`
+    });
+  };
+
+  // =========================================================================
+  // TENANT EDIT, DELETE & BULK IMPORT
+  // =========================================================================
+  const updateTenant = (tenantId: string, updatedData: Partial<Tenant>) => {
+    setAllTenants((prev) =>
+      prev.map((t) => (t.id === tenantId ? { ...t, ...updatedData } : t))
+    );
+    addToast({
+      type: 'success',
+      title: 'Tenant Profile Updated',
+      message: 'Tenant records updated successfully.'
+    });
+  };
+
+  const deleteTenant = (tenantId: string) => {
+    const target = allTenants.find((t) => t.id === tenantId);
+    if (target) {
+      // Mark matching unit as vacant
+      setUnits((prev) =>
+        prev.map((u) =>
+          u.unitNumber === target.unitNumber
+            ? { ...u, status: 'vacant', currentTenantId: undefined, currentTenantName: undefined }
+            : u
+        )
+      );
+    }
+    setAllTenants((prev) => prev.filter((t) => t.id !== tenantId));
+    addToast({
+      type: 'info',
+      title: 'Tenant Removed',
+      message: `${target?.name || 'Tenant'} removed and unit marked as Vacant.`
+    });
+  };
+
+  const bulkImportTenants = (importedTenants: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>[]) => {
+    const newTenants: Tenant[] = importedTenants.map((t, idx) => ({
+      ...t,
+      id: 't-imp-' + Date.now() + idx,
+      balanceDue: 0,
+      paymentStatus: 'paid'
+    }));
+
+    setAllTenants((prev) => [...newTenants, ...prev]);
+
+    // Update units to occupied
+    newTenants.forEach((nt) => {
+      setUnits((prev) => {
+        const match = prev.find((u) => u.unitNumber === nt.unitNumber);
+        if (match) {
+          return prev.map((u) =>
+            u.unitNumber === nt.unitNumber
+              ? { ...u, status: 'occupied', currentTenantId: nt.id, currentTenantName: nt.name }
+              : u
+          );
+        } else {
+          return [
+            {
+              id: 'u-' + Date.now() + Math.random(),
+              unitNumber: nt.unitNumber,
+              propertyId: nt.propertyId,
+              propertyName: nt.propertyName,
+              floor: 1,
+              bedrooms: 2,
+              bathrooms: 2,
+              squareFeet: 1100,
+              rentAmount: nt.rentAmount,
+              depositAmount: nt.depositAmount,
+              status: 'occupied',
+              currentTenantId: nt.id,
+              currentTenantName: nt.name
+            },
+            ...prev
+          ];
+        }
+      });
+    });
+
+    addToast({
+      type: 'success',
+      title: 'Bulk Import Complete! 🚀',
+      message: `Successfully imported ${newTenants.length} tenants into ERPNext directory.`
+    });
+  };
+
+  // Unit Operations
+  const addUnit = (unitData: Omit<Unit, 'id'>) => {
+    const newUnit: Unit = { ...unitData, id: 'u-' + Date.now() };
+    setUnits((prev) => [newUnit, ...prev]);
+    addToast({
+      type: 'success',
+      title: 'Unit Added to Inventory',
+      message: `${newUnit.unitNumber} (${newUnit.bedrooms} Bed) added to ${newUnit.propertyName}.`
+    });
+  };
+
+  const updateUnitStatus = (unitId: string, status: Unit['status']) => {
+    setUnits((prev) =>
+      prev.map((u) =>
+        u.id === unitId
+          ? {
+              ...u,
+              status,
+              currentTenantId: status === 'vacant' ? undefined : u.currentTenantId,
+              currentTenantName: status === 'vacant' ? undefined : u.currentTenantName
+            }
+          : u
+      )
+    );
+    addToast({
+      type: 'info',
+      title: 'Unit Status Updated',
+      message: `Unit status set to ${status}.`
+    });
+  };
+
+  const deleteUnit = (unitId: string) => {
+    setUnits((prev) => prev.filter((u) => u.id !== unitId));
+    addToast({
+      type: 'info',
+      title: 'Unit Removed',
+      message: 'Unit deleted from estate inventory.'
+    });
+  };
+
+  // Share Modal Opener
+  const openShareModal = (doc: any, type: 'invoice' | 'receipt') => {
+    setShareDocData(doc);
+    setShareDocType(type);
+    setIsShareModalOpen(true);
+  };
+
+  // M-Pesa STK Push
+  const triggerMpesaStkPush = (data: any) => {
+    setStkPaymentDetails(data);
+    setIsStkModalOpen(true);
+    setIsPayRentModalOpen(false);
+  };
+
   const confirmMpesaPayment = (confirmedDetails: any) => {
     if (!stkPaymentDetails) return;
 
@@ -417,90 +841,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setPayments((prev) => [newPayment, ...prev]);
 
-    // 1. Create ERPNext Payment Entry
-    const newPE: PaymentEntry = {
-      id: 'pe-' + Date.now(),
-      voucherNumber: `ACC-PAY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    // Create matching ERPNext Payment Entry
+    createPaymentEntry({
       partyName: stkPaymentDetails.tenantName,
+      tenantPhone: stkPaymentDetails.phone,
       unitNumber: stkPaymentDetails.unitNumber,
       propertyName: stkPaymentDetails.propertyName || 'Emerald Heights Luxury Residences',
       paidAmount: stkPaymentDetails.amount,
       modeOfPayment: 'M-Pesa',
       paidToAccount: '1120 - Safaricom M-Pesa Till Account',
       referenceNo: txRef,
-      postingDate: new Date().toISOString().split('T')[0],
       remarks: `${stkPaymentDetails.invoiceMonth} ${stkPaymentDetails.type.toUpperCase()} settlement for ${stkPaymentDetails.unitNumber}`
-    };
-    setPaymentEntries((prev) => [newPE, ...prev]);
-
-    // 2. Post dual GL Entries
-    const glDebit: GLEntry = {
-      id: 'gl-' + Date.now() + '-dr',
-      voucherType: 'Payment Entry',
-      voucherNo: newPE.voucherNumber,
-      account: '1120 - Safaricom M-Pesa Till Account',
-      debit: stkPaymentDetails.amount,
-      credit: 0,
-      postingDate: new Date().toISOString().split('T')[0],
-      remarks: `M-Pesa payment received Ref: ${txRef}`
-    };
-
-    const glCredit: GLEntry = {
-      id: 'gl-' + Date.now() + '-cr',
-      voucherType: 'Payment Entry',
-      voucherNo: newPE.voucherNumber,
-      account: `1310 - Debtors / Accounts Receivable (${stkPaymentDetails.tenantName})`,
-      debit: 0,
-      credit: stkPaymentDetails.amount,
-      postingDate: new Date().toISOString().split('T')[0],
-      remarks: `Settlement against ${stkPaymentDetails.unitNumber}`
-    };
-    setGlEntries((prev) => [glDebit, glCredit, ...prev]);
-
-    // 3. Mark matching ERPNext Sales Invoice as Paid
-    setSalesInvoices((prev) =>
-      prev.map((inv) =>
-        inv.unitNumber === stkPaymentDetails.unitNumber
-          ? { ...inv, status: 'Paid', outstandingAmount: Math.max(0, inv.outstandingAmount - stkPaymentDetails.amount) }
-          : inv
-      )
-    );
-
-    // 4. Update tenant balance
-    setAllTenants((prev) =>
-      prev.map((t) => {
-        if (t.unitNumber === stkPaymentDetails.unitNumber) {
-          const newBal = Math.max(0, t.balanceDue - stkPaymentDetails.amount);
-          return {
-            ...t,
-            balanceDue: newBal,
-            paymentStatus: newBal === 0 ? 'paid' : t.paymentStatus
-          };
-        }
-        return t;
-      })
-    );
-
-    // Update stats
-    setStats((prev) => ({
-      ...prev,
-      totalCollectedThisMonth: prev.totalCollectedThisMonth + stkPaymentDetails.amount,
-      totalPendingArrears: Math.max(0, prev.totalPendingArrears - stkPaymentDetails.amount)
-    }));
+    });
 
     setIsStkModalOpen(false);
     setActiveReceipt(newPayment);
-
-    addToast({
-      type: 'success',
-      title: 'M-Pesa Payment Reconciled 🧾',
-      message: `${formatCurrency(stkPaymentDetails.amount)} received via M-Pesa. Receipt #${receiptNumber} generated.`
-    });
   };
 
-  const payRent = async (data: any) => {
-    return triggerMpesaStkPush(data);
-  };
+  const payRent = async (data: any) => triggerMpesaStkPush(data);
 
   // Maintenance Management
   const submitMaintenanceTicket = (
@@ -517,16 +875,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setMaintenanceTickets((prev) => [newTicket, ...prev]);
-
-    setStats((prev) => ({
-      ...prev,
-      activeMaintenanceTickets: prev.activeMaintenanceTickets + 1
-    }));
-
     addToast({
       type: 'success',
-      title: 'Maintenance Issue Logged 🛠️',
-      message: `Ticket #${ticketNo} logged. Property manager and technician have been notified.`
+      title: 'Issue Logged 🛠️',
+      message: `Ticket #${ticketNo} logged. Property manager notified.`
     });
   };
 
@@ -545,14 +897,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return t;
       })
     );
-
-    if (status === 'resolved') {
-      setStats((prev) => ({
-        ...prev,
-        activeMaintenanceTickets: Math.max(0, prev.activeMaintenanceTickets - 1)
-      }));
-    }
-
     addToast({
       type: 'info',
       title: 'Ticket Status Updated',
@@ -574,7 +918,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           : t
       )
     );
-
     addToast({
       type: 'success',
       title: 'Technician Assigned',
@@ -597,13 +940,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setGatePasses((prev) => [newPass, ...prev]);
-
     addToast({
       type: 'success',
-      title: 'Digital Gate Pass Generated! 🎟️',
-      message: `Passcode ${passCode} is active for ${visitorName}.`
+      title: 'Gate Pass Active! 🎟️',
+      message: `Passcode ${passCode} generated.`
     });
-
     return newPass;
   };
 
@@ -614,134 +955,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: 'ann-' + Date.now(),
       date: new Date().toISOString().split('T')[0]
     };
-
     setAnnouncements((prev) => [newAnn, ...prev]);
-
     addToast({
       type: 'success',
-      title: 'Announcement Broadcasted 📢',
-      message: `Notice "${newAnn.title}" broadcasted to residents.`
+      title: 'Notice Broadcasted 📢',
+      message: `Notice "${newAnn.title}" sent.`
     });
   };
 
-  // Tenant Operations (With Property Linking)
   const addTenant = (tenantData: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => {
-    const newTenant: Tenant = {
-      ...tenantData,
-      id: 't-' + Date.now(),
-      balanceDue: 0,
-      paymentStatus: 'paid'
-    };
-
-    setAllTenants((prev) => [newTenant, ...prev]);
-
-    // Create automatic ERPNext Sales Invoice
-    const newInvoice: SalesInvoice = {
-      id: 'sinv-' + Date.now(),
-      invoiceNumber: `ACC-SINV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      customerName: newTenant.name,
-      unitNumber: newTenant.unitNumber,
-      propertyName: newTenant.propertyName,
-      grandTotal: newTenant.rentAmount,
-      outstandingAmount: 0,
-      status: 'Paid',
-      postingDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date().toISOString().split('T')[0],
-      incomeAccount: '4110 - Rental Income',
-      costCenter: 'Operations'
-    };
-    setSalesInvoices((prev) => [newInvoice, ...prev]);
-
-    // Check if unit already exists, otherwise create it
-    setUnits((prev) => {
-      const existing = prev.find((u) => u.unitNumber === tenantData.unitNumber);
-      if (existing) {
-        return prev.map((u) =>
-          u.unitNumber === tenantData.unitNumber
-            ? {
-                ...u,
-                propertyId: newTenant.propertyId,
-                propertyName: newTenant.propertyName,
-                status: 'occupied',
-                currentTenantId: newTenant.id,
-                currentTenantName: newTenant.name,
-                rentAmount: tenantData.rentAmount || u.rentAmount,
-                depositAmount: tenantData.depositAmount || u.depositAmount
-              }
-            : u
-        );
-      } else {
-        const newUnit: Unit = {
-          id: 'u-' + Date.now(),
-          unitNumber: tenantData.unitNumber,
-          propertyId: newTenant.propertyId,
-          propertyName: newTenant.propertyName,
-          floor: 1,
-          bedrooms: 2,
-          bathrooms: 2,
-          squareFeet: 1100,
-          rentAmount: tenantData.rentAmount,
-          depositAmount: tenantData.depositAmount,
-          status: 'occupied',
-          currentTenantId: newTenant.id,
-          currentTenantName: newTenant.name
-        };
-        return [newUnit, ...prev];
-      }
-    });
-
-    addToast({
-      type: 'success',
-      title: 'Tenant Registered in ERPNext',
-      message: `${newTenant.name} registered to ${newTenant.propertyName} (${newTenant.unitNumber}).`
-    });
+    bulkImportTenants([tenantData]);
   };
 
   const sendPaymentReminder = (tenantId: string) => {
     const t = allTenants.find((item) => item.id === tenantId);
     if (!t) return;
-
     addToast({
       type: 'info',
       title: 'Rent Reminder Dispatched 📱',
       message: `SMS reminder sent to ${t.name} (${t.phone}) for ${formatCurrency(t.balanceDue || t.rentAmount)}.`
-    });
-  };
-
-  // Unit Operations (With Property Linking)
-  const addUnit = (unitData: Omit<Unit, 'id'>) => {
-    const newUnit: Unit = {
-      ...unitData,
-      id: 'u-' + Date.now()
-    };
-
-    setUnits((prev) => [newUnit, ...prev]);
-
-    addToast({
-      type: 'success',
-      title: 'Unit Added to Inventory',
-      message: `${newUnit.unitNumber} (${newUnit.bedrooms} Bed) added to ${newUnit.propertyName}.`
-    });
-  };
-
-  const updateUnitStatus = (unitId: string, status: Unit['status']) => {
-    setUnits((prev) =>
-      prev.map((u) =>
-        u.id === unitId
-          ? {
-              ...u,
-              status,
-              currentTenantId: status === 'vacant' ? undefined : u.currentTenantId,
-              currentTenantName: status === 'vacant' ? undefined : u.currentTenantName
-            }
-          : u
-      )
-    );
-
-    addToast({
-      type: 'info',
-      title: 'Unit Status Updated',
-      message: `Unit status set to ${status}.`
     });
   };
 
@@ -758,6 +990,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         selectedPropertyId,
         setSelectedPropertyId,
         addProperty,
+        users,
+        addUser,
+        updateUserRole,
+        deleteUser,
+        sendPasswordResetLink,
         activeTenant,
         allTenants,
         units,
@@ -771,6 +1008,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         salesInvoices,
         paymentEntries,
         glEntries,
+        expenses,
+        createSalesInvoice,
+        createPaymentEntry,
+        deleteSalesInvoice,
+        deletePaymentEntry,
+        addExpense,
+        updateTenant,
+        deleteTenant,
+        bulkImportTenants,
+        addUnit,
+        updateUnitStatus,
+        deleteUnit,
         isStkModalOpen,
         setIsStkModalOpen,
         stkPaymentDetails,
@@ -782,6 +1031,19 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsAddTenantModalOpen,
         isAddUnitModalOpen,
         setIsAddUnitModalOpen,
+        isAddSalesInvoiceModalOpen,
+        setIsAddSalesInvoiceModalOpen,
+        isAddPaymentEntryModalOpen,
+        setIsAddPaymentEntryModalOpen,
+        isAddUserModalOpen,
+        setIsAddUserModalOpen,
+        isBulkImportModalOpen,
+        setIsBulkImportModalOpen,
+        isShareModalOpen,
+        setIsShareModalOpen,
+        shareDocData,
+        shareDocType,
+        openShareModal,
         isPayRentModalOpen,
         setIsPayRentModalOpen,
         isMaintenanceModalOpen,
@@ -804,8 +1066,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         broadcastAnnouncement,
         addTenant,
         sendPaymentReminder,
-        addUnit,
-        updateUnitStatus,
         formatCurrency
       }}
     >

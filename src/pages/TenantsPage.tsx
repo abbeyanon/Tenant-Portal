@@ -13,9 +13,16 @@ import {
   AlertCircle,
   CreditCard,
   Send,
-  Building2
+  Building2,
+  Download,
+  Upload,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { Tenant } from '../types';
+import { exportToCSV } from '../utils/exportUtils';
+import { EditTenantModal } from '../components/EditTenantModal';
+import { BulkImportTenantsModal } from '../components/BulkImportTenantsModal';
 
 export const TenantsPage: React.FC = () => {
   const {
@@ -24,12 +31,16 @@ export const TenantsPage: React.FC = () => {
     formatCurrency,
     sendPaymentReminder,
     setIsAddTenantModalOpen,
+    isBulkImportModalOpen,
+    setIsBulkImportModalOpen,
     selectedPropertyId,
-    setSelectedPropertyId
+    setSelectedPropertyId,
+    deleteTenant
   } = useTenant();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'due' | 'overdue'>('all');
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
 
   const filteredTenants = allTenants.filter((t) => {
     const matchesProperty = selectedPropertyId === 'all' || t.propertyId === selectedPropertyId;
@@ -46,6 +57,24 @@ export const TenantsPage: React.FC = () => {
   const paidCount = filteredTenants.filter((t) => t.paymentStatus === 'paid').length;
   const dueCount = filteredTenants.filter((t) => t.paymentStatus === 'due').length;
   const overdueCount = filteredTenants.filter((t) => t.paymentStatus === 'overdue').length;
+
+  const handleExportTenants = () => {
+    const data = filteredTenants.map((t) => ({
+      FullName: t.name,
+      Email: t.email,
+      Phone: t.phone,
+      Property: t.propertyName,
+      Unit: t.unitNumber,
+      RentAmount: t.rentAmount,
+      BalanceDue: t.balanceDue,
+      PaymentStatus: t.paymentStatus.toUpperCase(),
+      LeaseStart: t.leaseStart,
+      LeaseEnd: t.leaseEnd,
+      VehiclePlate: t.vehiclePlate || '',
+      EmergencyContact: `${t.emergencyContact?.name || ''} (${t.emergencyContact?.phone || ''})`
+    }));
+    exportToCSV('tenants_directory.csv', data);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 py-12 transition-colors">
@@ -65,13 +94,31 @@ export const TenantsPage: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setIsAddTenantModalOpen(true)}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/20 flex items-center gap-2 transition transform hover:-translate-y-0.5 self-start md:self-auto"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Onboard New Tenant</span>
-          </button>
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={handleExportTenants}
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 shadow-sm"
+            >
+              <Download className="w-4 h-4 text-purple-600" />
+              <span>Export CSV</span>
+            </button>
+
+            <button
+              onClick={() => setIsBulkImportModalOpen(true)}
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 shadow-sm"
+            >
+              <Upload className="w-4 h-4 text-brand-600" />
+              <span>Bulk Import (CSV)</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddTenantModalOpen(true)}
+              className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Onboard Tenant</span>
+            </button>
+          </div>
         </div>
 
         {/* Property Filter Bar */}
@@ -142,7 +189,7 @@ export const TenantsPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
             <input
               type="text"
-              placeholder="Search by tenant name, unit number, estate, phone..."
+              placeholder="Search tenant name, unit number, estate, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-11 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -150,7 +197,7 @@ export const TenantsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-            <span className="text-xs font-bold text-slate-500 shrink-0">Payment Status:</span>
+            <span className="text-xs font-bold text-slate-500 shrink-0">Status:</span>
             {[
               { id: 'all', label: `All (${filteredTenants.length})` },
               { id: 'paid', label: `Paid (${paidCount})` },
@@ -233,6 +280,15 @@ export const TenantsPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
                 <button
+                  onClick={() => setEditingTenant(t)}
+                  className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 font-bold text-xs flex items-center justify-center gap-1"
+                  title="Edit details"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+
+                <button
                   onClick={() => sendPaymentReminder(t.id)}
                   className="flex-1 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 hover:bg-purple-100 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                 >
@@ -244,6 +300,19 @@ export const TenantsPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Edit Tenant Modal */}
+      <EditTenantModal
+        isOpen={Boolean(editingTenant)}
+        onClose={() => setEditingTenant(null)}
+        tenant={editingTenant}
+      />
+
+      {/* Bulk Import Modal */}
+      <BulkImportTenantsModal
+        isOpen={isBulkImportModalOpen}
+        onClose={() => setIsBulkImportModalOpen(false)}
+      />
     </div>
   );
 };
