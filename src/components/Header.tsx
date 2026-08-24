@@ -18,7 +18,7 @@ import {
   X,
   PlusCircle,
   PhoneCall,
-  ChevronDown
+  UserPlus
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -128,6 +128,19 @@ export const Header: React.FC = () => {
               Dashboard
             </Link>
 
+            {/* Tenant List / Directory Link */}
+            <Link
+              to="/tenants"
+              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                isActive('/tenants')
+                  ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+              }`}
+            >
+              <Users className="w-4 h-4 text-purple-600" />
+              <span>Tenants Directory</span>
+            </Link>
+
             <Link
               to="/payments"
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
@@ -186,6 +199,24 @@ export const Header: React.FC = () => {
 
           {/* Right Action Icons & Buttons */}
           <div className="flex items-center gap-3">
+            {/* Direct Add Tenant Button for Property Managers & Quick access */}
+            <button
+              onClick={() => setIsAddTenantModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition transform hover:-translate-y-0.5"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Add Tenant</span>
+            </button>
+
+            {/* Quick Action CTA Button for Rent Payment */}
+            <button
+              onClick={() => setIsPayRentModalOpen(true)}
+              className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>Pay Rent (M-Pesa)</span>
+            </button>
+
             {/* Notices Bell */}
             <div className="relative">
               <button
@@ -222,25 +253,6 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Quick Action CTA Button */}
-            {currentRole === 'tenant' ? (
-              <button
-                onClick={() => setIsPayRentModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>Pay Rent (M-Pesa)</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsAddTenantModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Onboard Tenant</span>
-              </button>
-            )}
-
             {/* User Mini Card */}
             <Link
               to="/settings"
@@ -274,6 +286,9 @@ export const Header: React.FC = () => {
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Dashboard
             </Link>
+            <Link to="/tenants" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+              Tenants List
+            </Link>
             <Link to="/payments" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Rent & Billing
             </Link>
@@ -291,7 +306,18 @@ export const Header: React.FC = () => {
             </Link>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsAddTenantModalOpen(true);
+              }}
+              className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Onboard New Tenant</span>
+            </button>
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
