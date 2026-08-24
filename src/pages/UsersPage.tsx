@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { SystemUser, UserRole } from '../types';
 import { exportToCSV } from '../utils/exportUtils';
+import { PasswordResetModal } from '../components/PasswordResetModal';
 
 export const UsersPage: React.FC = () => {
   const {
@@ -24,12 +25,12 @@ export const UsersPage: React.FC = () => {
     setIsAddUserModalOpen,
     updateUserRole,
     deleteUser,
-    sendPasswordResetLink,
     addToast
   } = useTenant();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
+  const [selectedUserForReset, setSelectedUserForReset] = useState<SystemUser | null>(null);
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -195,9 +196,9 @@ export const UsersPage: React.FC = () => {
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => sendPasswordResetLink(u.id)}
-                          className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-300 font-bold text-xs flex items-center gap-1 hover:bg-purple-100"
-                          title="Dispatch Password Reset Email/SMS"
+                          onClick={() => setSelectedUserForReset(u)}
+                          className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-300 font-bold text-xs flex items-center gap-1 hover:bg-purple-100 transition"
+                          title="Open Password Reset Center"
                         >
                           <KeyRound className="w-3.5 h-3.5" />
                           <span>Reset Password</span>
@@ -219,6 +220,13 @@ export const UsersPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Password Reset Delivery & Override Modal */}
+      <PasswordResetModal
+        isOpen={Boolean(selectedUserForReset)}
+        onClose={() => setSelectedUserForReset(null)}
+        user={selectedUserForReset}
+      />
     </div>
   );
 };
