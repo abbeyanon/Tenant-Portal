@@ -182,8 +182,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
+  // Default to false unless explicitly authenticated
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('tenanthub_auth') !== 'false';
+    return localStorage.getItem('tenanthub_auth') === 'true';
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
@@ -344,11 +345,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem('tenanthub_pe', JSON.stringify(paymentEntries));
     localStorage.setItem('tenanthub_gl', JSON.stringify(glEntries));
     localStorage.setItem('tenanthub_expenses', JSON.stringify(expenses));
-  }, [properties, users, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries, expenses]);
+    localStorage.setItem('tenanthub_auth', isAuthenticated ? 'true' : 'false');
+  }, [properties, users, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries, expenses, isAuthenticated]);
 
   // Auth Methods
   const login = async (email: string, password?: string): Promise<boolean> => {
-    if (email.includes('admin') || email.includes('manager')) {
+    let userRole: UserRole = 'tenant';
+    if (email.includes('admin') || email.includes('manager') || email.includes('accounts')) {
+      userRole = 'landlord';
       const managerUser: UserAccount = {
         id: 'usr-manager-1',
         name: 'Faith Chebet (Estate Director)',
@@ -358,6 +362,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
       setCurrentUser(managerUser);
       setCurrentRole('landlord');
+      localStorage.setItem('tenanthub_user', JSON.stringify(managerUser));
+      localStorage.setItem('tenanthub_role', 'landlord');
     } else {
       const tenantUser: UserAccount = {
         id: 'usr-tenant-1',
@@ -370,9 +376,13 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
       setCurrentUser(tenantUser);
       setCurrentRole('tenant');
+      localStorage.setItem('tenanthub_user', JSON.stringify(tenantUser));
+      localStorage.setItem('tenanthub_role', 'tenant');
     }
 
+    localStorage.setItem('tenanthub_auth', 'true');
     setIsAuthenticated(true);
+
     addToast({
       type: 'success',
       title: 'Authentication Successful',
@@ -382,11 +392,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const logout = () => {
+    localStorage.setItem('tenanthub_auth', 'false');
     setIsAuthenticated(false);
     addToast({
       type: 'info',
       title: 'Signed Out',
-      message: 'You have been logged out of the portal.'
+      message: 'You have been completely logged out of the portal.'
     });
   };
 
@@ -397,6 +408,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       role,
       name: role === 'tenant' ? 'John Kamau' : 'Faith Chebet (Estate Director)'
     }));
+    localStorage.setItem('tenanthub_role', role);
     addToast({
       type: 'info',
       title: 'Workspace Switched',

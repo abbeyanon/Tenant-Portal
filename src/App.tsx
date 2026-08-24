@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useTenant } from './context/TenantContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -33,10 +33,8 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export const App: React.FC = () => {
-  const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
-
   const {
+    isAuthenticated,
     isStkModalOpen,
     setIsStkModalOpen,
     stkPaymentDetails,
@@ -57,15 +55,27 @@ export const App: React.FC = () => {
     setViewingInvoice
   } = useTenant();
 
+  // If user is NOT logged in, exclusively render the Login Page and hide all portal UI
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 transition-colors">
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 transition-colors">
-      {/* Hide Header and Topbar when on Login Page */}
-      {!isLoginPage && <Header />}
+      <Header />
 
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/units" element={<UnitsPage />} />
           <Route path="/tenants" element={<TenantsPage />} />
@@ -77,11 +87,11 @@ export const App: React.FC = () => {
           <Route path="/gate-pass" element={<GatePassPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 
-      {/* Hide Footer when on Login Page */}
-      {!isLoginPage && <Footer />}
+      <Footer />
 
       {/* Global Interactive Modals */}
       <PayRentModal />
