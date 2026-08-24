@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    @apply transition-colors duration-200;
+  }
+}
+
+/* Light / Dark Mode Surface Refinements */
+.light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.dark {
+  background-color: #090d16;
+  color: #f1f5f9;
+}
+
+/* Print Layout for Official Rent Receipts */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header,
+  footer,
+  .no-print,
+  button {
+    display: none !important;
+  }
+}
