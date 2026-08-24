@@ -1,0 +1,92 @@
+{
+  "name": "Tenant",
+  "doctype": "DocType",
+  "module": "Tenant Portal",
+  "autoname": "format:TNT-{####}",
+  "is_submittable": 0,
+  "fields": [
+    {
+      "fieldname": "tenant_name",
+      "fieldtype": "Data",
+      "label": "Tenant Full Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "email",
+      "fieldtype": "Data",
+      "label": "Email Address",
+      "options": "Email"
+    },
+    {
+      "fieldname": "phone",
+      "fieldtype": "Data",
+      "label": "Phone Number",
+      "reqd": 1
+    },
+    {
+      "fieldname": "unit_number",
+      "fieldtype": "Link",
+      "label": "Assigned Unit",
+      "options": "Property Unit",
+      "reqd": 1
+    },
+    {
+      "fieldname": "rent_amount",
+      "fieldtype": "Currency",
+      "label": "Monthly Rent (KES)",
+      "reqd": 1
+    },
+    {
+      "fieldname": "deposit_amount",
+      "fieldtype": "Currency",
+      "label": "Security Deposit (KES)"
+    },
+    {
+      "fieldname": "balance_due",
+      "fieldtype": "Currency",
+      "label": "Balance Due (KES)",
+      "default": "0"
+    },
+    {
+      "fieldname": "payment_status",
+      "fieldtype": "Select",
+      "label": "Payment Status",
+      "options": "Paid\nDue\nOverdue",
+      "default": "Paid"
+    },
+    {
+      "fieldname": "lease_start",
+      "fieldtype": "Date",
+      "label": "Lease Start Date"
+    },
+    {
+      "fieldname": "lease_end",
+      "fieldtype": "Date",
+      "label": "Lease Expiry Date"
+    },
+    {
+      "fieldname": "vehicle_plate",
+      "fieldtype": "Data",
+      "label": "Vehicle License Plate"
+    },
+    {
+      "fieldname": "emergency_contact_name",
+      "fieldtype": "Data",
+      "label": "Emergency Contact Name"
+    },
+    {
+      "fieldname": "emergency_contact_phone",
+      "fieldtype": "Data",
+      "label": "Emergency Contact Phone"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ]
+}

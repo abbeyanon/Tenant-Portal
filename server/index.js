@@ -43,26 +43,125 @@ const saveDb = (data) => {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 };
 
-// --- REST API ENDPOINTS ---
+// =========================================================================
+// FRAPPE FRAMEWORK REST API PROTOCOL IMPLEMENTATION
+// =========================================================================
 
-// Health Check
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'TenantHub Platform API', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    framework: 'Frappe Framework REST API Bridge',
+    app: 'tenant_portal',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// GET /api/tenants
-app.get('/api/tenants', (req, res) => {
+// Frappe DocType Resource Endpoint: GET /api/resource/:doctype
+app.get('/api/resource/:doctype', (req, res) => {
   const db = getDb();
-  res.json(db.tenants || []);
+  const dt = decodeURIComponent(req.params.doctype).toLowerCase().replace(/\s+/g, '');
+
+  if (dt === 'tenant') {
+    return res.json({ data: db.tenants || [] });
+  } else if (dt === 'propertyunit' || dt === 'unit') {
+    return res.json({ data: db.units || [] });
+  } else if (dt === 'rentpayment' || dt === 'payment') {
+    return res.json({ data: db.payments || [] });
+  } else if (dt === 'maintenanceticket' || dt === 'maintenance') {
+    return res.json({ data: db.maintenanceTickets || [] });
+  } else if (dt === 'gatepass') {
+    return res.json({ data: db.gatePasses || [] });
+  }
+
+  res.json({ data: [] });
 });
 
-// POST /api/payments (M-Pesa STK push & Card rent payment)
+// Frappe DocType Resource Endpoint: POST /api/resource/:doctype
+app.post('/api/resource/:doctype', (req, res) => {
+  const db = getDb();
+  const dt = decodeURIComponent(req.params.doctype).toLowerCase().replace(/\s+/g, '');
+  const doc = req.body;
+
+  if (dt === 'tenant') {
+    const newTenant = { ...doc, id: 't-' + Date.now() };
+    db.tenants = [newTenant, ...(db.tenants || [])];
+    saveDb(db);
+    return res.status(201).json({ data: newTenant });
+  } else if (dt === 'propertyunit' || dt === 'unit') {
+    const newUnit = { ...doc, id: 'u-' + Date.now() };
+    db.units = [newUnit, ...(db.units || [])];
+    saveDb(db);
+    return res.status(201).json({ data: newUnit });
+  }
+
+  res.status(201).json({ data: doc });
+});
+
+// Frappe Whitelisted RPC Endpoint: POST /api/method/tenant_portal.api.pay_rent_mpesa
+app.post('/api/method/tenant_portal.api.pay_rent_mpesa', (req, res) => {
+  const db = getDb();
+  const { tenant_name, unit_number, amount, phone_number, payment_type, invoice_month } = req.body;
+
+  const receiptNumber = `TH-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const txRef = `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+  const newPayment = {
+    id: 'pay-' + Date.now(),
+    receiptNumber,
+    unitNumber: unit_number,
+    tenantName: tenant_name,
+    tenantPhone: phone_number,
+    amount: Number(amount),
+    type: (payment_type || 'rent').toLowerCase(),
+    method: 'mpesa',
+    transactionRef: txRef,
+    invoiceMonth: invoice_month || 'August 2026',
+    status: 'completed',
+    date: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+
+  db.payments = [newPayment, ...(db.payments || [])];
+  saveDb(db);
+
+  res.json({
+    message: {
+      success: true,
+      receipt_number: receiptNumber,
+      transaction_reference: txRef,
+      amount: Number(amount),
+      unit_number,
+      payment: newPayment
+    }
+  });
+});
+
+// Frappe Whitelisted RPC Endpoint: POST /api/method/tenant_portal.api.get_dashboard_stats
+app.post('/api/method/tenant_portal.api.get_dashboard_stats', (req, res) => {
+  const db = getDb();
+  const totalUnits = (db.units && db.units.length) || 24;
+  const occupiedUnits = (db.tenants && db.tenants.length) || 22;
+  const occupancyRate = Math.round((occupiedUnits / totalUnits) * 100);
+
+  res.json({
+    message: {
+      total_units: totalUnits,
+      occupied_units: occupiedUnits,
+      occupancy_rate: occupancyRate,
+      total_collected: 1152000,
+      total_arrears: 96000,
+      active_maintenance_tickets: (db.maintenanceTickets && db.maintenanceTickets.length) || 3
+    }
+  });
+});
+
+// Legacy backward compatible endpoints
+app.get('/api/tenants', (req, res) => res.json(getDb().tenants || []));
+app.get('/api/maintenance', (req, res) => res.json(getDb().maintenanceTickets || []));
 app.post('/api/payments', (req, res) => {
   const db = getDb();
-  const { unitNumber, tenantName, amount, method, invoiceMonth } = req.body;
   const receiptNumber = `TH-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const txRef = method === 'mpesa' ? `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}` : `CRD_${Date.now()}`;
-
+  const txRef = `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const newPayment = {
     ...req.body,
     id: 'pay-' + Date.now(),
@@ -71,36 +170,9 @@ app.post('/api/payments', (req, res) => {
     status: 'completed',
     date: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
-
   db.payments = [newPayment, ...(db.payments || [])];
   saveDb(db);
-
   res.status(201).json({ success: true, payment: newPayment, receiptNumber });
-});
-
-// GET /api/maintenance
-app.get('/api/maintenance', (req, res) => {
-  const db = getDb();
-  res.json(db.maintenanceTickets || []);
-});
-
-// POST /api/maintenance
-app.post('/api/maintenance', (req, res) => {
-  const db = getDb();
-  const ticketNo = `MT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
-  const newTicket = {
-    ...req.body,
-    id: 'tk-' + Date.now(),
-    ticketNumber: ticketNo,
-    status: 'reported',
-    reportedDate: new Date().toISOString().split('T')[0],
-    notes: ['Ticket logged by resident tenant.']
-  };
-
-  db.maintenanceTickets = [newTicket, ...(db.maintenanceTickets || [])];
-  saveDb(db);
-
-  res.status(201).json(newTicket);
 });
 
 // Favicon routes
@@ -137,12 +209,12 @@ if (fs.existsSync(distPath)) {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(distPath, 'index.html'));
     } else {
-      res.status(404).json({ error: 'API route not found' });
+      res.status(404).json({ error: 'Frappe API route not found' });
     }
   });
 }
 
 app.listen(PORT, () => {
-  console.log(`\n🏠 TenantHub Full-Stack Application is running on:`);
-  console.log(`   ➜  http://localhost:${PORT}/ (Unified Frontend & Backend)\n`);
+  console.log(`\n🏢 TenantHub (Frappe Framework Backend Bridge) is active on:`);
+  console.log(`   ➜  http://localhost:${PORT}/ (Frappe REST API + React SPA)\n`);
 });

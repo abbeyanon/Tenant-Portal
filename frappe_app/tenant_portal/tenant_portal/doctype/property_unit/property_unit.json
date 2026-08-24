@@ -1,0 +1,77 @@
+{
+  "name": "Property Unit",
+  "doctype": "DocType",
+  "module": "Tenant Portal",
+  "autoname": "field:unit_number",
+  "fields": [
+    {
+      "fieldname": "unit_number",
+      "fieldtype": "Data",
+      "label": "Unit Number",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "property_name",
+      "fieldtype": "Data",
+      "label": "Estate / Building Name",
+      "default": "Emerald Heights Residences"
+    },
+    {
+      "fieldname": "floor",
+      "fieldtype": "Int",
+      "label": "Floor Level",
+      "default": "1"
+    },
+    {
+      "fieldname": "bedrooms",
+      "fieldtype": "Int",
+      "label": "Bedrooms Count",
+      "default": "2"
+    },
+    {
+      "fieldname": "bathrooms",
+      "fieldtype": "Int",
+      "label": "Bathrooms Count",
+      "default": "2"
+    },
+    {
+      "fieldname": "square_feet",
+      "fieldtype": "Int",
+      "label": "Square Footage",
+      "default": "1150"
+    },
+    {
+      "fieldname": "rent_amount",
+      "fieldtype": "Currency",
+      "label": "Monthly Rent (KES)",
+      "reqd": 1
+    },
+    {
+      "fieldname": "deposit_amount",
+      "fieldtype": "Currency",
+      "label": "Security Deposit (KES)"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Unit Status",
+      "options": "Vacant\nOccupied\nMaintenance",
+      "default": "Vacant"
+    },
+    {
+      "fieldname": "current_tenant",
+      "fieldtype": "Data",
+      "label": "Current Resident Tenant"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ]
+}

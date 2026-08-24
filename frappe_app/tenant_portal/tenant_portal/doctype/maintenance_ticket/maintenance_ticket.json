@@ -1,0 +1,79 @@
+{
+  "name": "Maintenance Ticket",
+  "doctype": "DocType",
+  "module": "Tenant Portal",
+  "autoname": "format:MT-{YYYY}-{###}",
+  "fields": [
+    {
+      "fieldname": "ticket_number",
+      "fieldtype": "Data",
+      "label": "Ticket Number",
+      "reqd": 1
+    },
+    {
+      "fieldname": "unit_number",
+      "fieldtype": "Link",
+      "label": "Unit Number",
+      "options": "Property Unit",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tenant_name",
+      "fieldtype": "Data",
+      "label": "Tenant Name"
+    },
+    {
+      "fieldname": "tenant_phone",
+      "fieldtype": "Data",
+      "label": "Tenant Phone"
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Category",
+      "options": "Plumbing\nElectrical\nCarpentry\nAppliance\nHVAC\nSecurity\nPainting",
+      "default": "Plumbing"
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Issue Summary",
+      "reqd": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Description",
+      "reqd": 1
+    },
+    {
+      "fieldname": "priority",
+      "fieldtype": "Select",
+      "label": "Priority",
+      "options": "Emergency\nHigh\nMedium\nLow",
+      "default": "Medium"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Reported\nAssigned\nIn Progress\nResolved",
+      "default": "Reported"
+    },
+    {
+      "fieldname": "assigned_technician",
+      "fieldtype": "Data",
+      "label": "Assigned Technician"
+    },
+    {
+      "fieldname": "technician_phone",
+      "fieldtype": "Data",
+      "label": "Technician Phone"
+    },
+    {
+      "fieldname": "reported_date",
+      "fieldtype": "Date",
+      "label": "Reported Date"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "name": "Gate Pass",
+  "doctype": "DocType",
+  "module": "Tenant Portal",
+  "autoname": "field:pass_code",
+  "fields": [
+    {
+      "fieldname": "pass_code",
+      "fieldtype": "Data",
+      "label": "Pass Code",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "visitor_name",
+      "fieldtype": "Data",
+      "label": "Visitor Full Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "visitor_phone",
+      "fieldtype": "Data",
+      "label": "Visitor Phone"
+    },
+    {
+      "fieldname": "unit_number",
+      "fieldtype": "Link",
+      "label": "Unit Number",
+      "options": "Property Unit",
+      "reqd": 1
+    },
+    {
+      "fieldname": "valid_date",
+      "fieldtype": "Date",
+      "label": "Valid Date"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Active\nUsed\nExpired",
+      "default": "Active"
+    }
+  ]
+}
