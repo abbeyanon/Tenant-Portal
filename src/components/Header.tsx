@@ -56,7 +56,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-dark-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-dark-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors font-sans">
       {/* 1. Top Estate Bar */}
       <div className="bg-slate-900 text-white text-xs py-1.5 px-3 sm:px-6">
         <div className="max-w-[1550px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -372,30 +372,30 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Profile & Logout */}
-            <div className="flex items-center gap-2">
-              <Link
-                to="/settings"
-                className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold"
-              >
-                {currentUser.avatar ? (
-                  <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 rounded-lg object-cover" />
-                ) : (
-                  <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
-                    {currentUser.name.charAt(0)}
-                  </div>
-                )}
-                <span className="hidden md:inline">{currentUser.name.split(' ')[0]}</span>
-              </Link>
+            {/* User Profile Badge */}
+            <Link
+              to="/settings"
+              className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 transition"
+            >
+              {currentUser.avatar ? (
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 rounded-lg object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
+                  {currentUser.name.charAt(0)}
+                </div>
+              )}
+              <span className="hidden md:inline">{currentUser.name.split(' ')[0]}</span>
+            </Link>
 
-              <button
-                onClick={logout}
-                className="p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-500 hover:text-rose-600 transition"
-                title="Sign Out of Portal"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Explicit "Log Out" Button with Clear Text Label */}
+            <button
+              onClick={logout}
+              className="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              title="Sign Out of Portal"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
 
             {/* Mobile Hamburger */}
             <button
@@ -469,6 +469,20 @@ export const Header: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Mobile Log Out Button */}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                logout();
+              }}
+              className="w-full py-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Log Out</span>
+            </button>
+          </div>
         </div>
       )}
     </header>
