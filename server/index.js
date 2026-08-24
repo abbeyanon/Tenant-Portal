@@ -82,6 +82,18 @@ const initialSeedData = {
     { id: 'u-4b', unitNumber: 'Unit 4B', propertyName: 'Emerald Heights Residences', floor: 4, bedrooms: 2, bathrooms: 2, squareFeet: 1150, rentAmount: 48000, depositAmount: 48000, status: 'occupied', currentTenantId: 't-101', currentTenantName: 'John Kamau' },
     { id: 'u-5a', unitNumber: 'Unit 5A (Penthouse)', propertyName: 'Emerald Heights Residences', floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1850, rentAmount: 85000, depositAmount: 85000, status: 'maintenance' }
   ],
+  salesInvoices: [
+    { id: 'sinv-001', invoiceNumber: 'ACC-SINV-2026-0801', customerName: 'John Kamau', unitNumber: 'Unit 4B', grandTotal: 48000, outstandingAmount: 0, status: 'Paid', postingDate: '2026-08-01', dueDate: '2026-08-05', incomeAccount: '4110 - Rental Income', costCenter: 'Emerald Heights - Operations' },
+    { id: 'sinv-002', invoiceNumber: 'ACC-SINV-2026-0802', customerName: 'Sarah Mutua', unitNumber: 'Unit 2A', grandTotal: 48000, outstandingAmount: 48000, status: 'Unpaid', postingDate: '2026-08-01', dueDate: '2026-08-05', incomeAccount: '4110 - Rental Income', costCenter: 'Emerald Heights - Operations' },
+    { id: 'sinv-003', invoiceNumber: 'ACC-SINV-2026-0803', customerName: 'David Omondi', unitNumber: 'Unit 1C', grandTotal: 38000, outstandingAmount: 76000, status: 'Overdue', postingDate: '2026-08-01', dueDate: '2026-08-05', incomeAccount: '4110 - Rental Income', costCenter: 'Emerald Heights - Operations' }
+  ],
+  paymentEntries: [
+    { id: 'pe-001', voucherNumber: 'ACC-PAY-2026-0089', partyName: 'John Kamau', unitNumber: 'Unit 4B', paidAmount: 48000, modeOfPayment: 'M-Pesa', paidToAccount: '1120 - Safaricom M-Pesa Till Account', referenceNo: 'QKD8921KL9', postingDate: '2026-08-04', remarks: 'August 2026 Rent Settlement' }
+  ],
+  glEntries: [
+    { id: 'gl-001', voucherType: 'Sales Invoice', voucherNo: 'ACC-SINV-2026-0801', account: '1310 - Debtors / Accounts Receivable (John Kamau)', debit: 48000, credit: 0, postingDate: '2026-08-01', remarks: 'Rent Invoice for Unit 4B' },
+    { id: 'gl-002', voucherType: 'Sales Invoice', voucherNo: 'ACC-SINV-2026-0801', account: '4110 - Rental Income', debit: 0, credit: 48000, postingDate: '2026-08-01', remarks: 'Rental Income recognized' }
+  ],
   payments: [
     { id: 'pay-001', receiptNumber: 'TH-REC-2026-0812', unitNumber: 'Unit 4B', tenantName: 'John Kamau', tenantPhone: '+254 712 345 678', amount: 48000, type: 'rent', method: 'mpesa', transactionRef: 'QKD8921KL9', invoiceMonth: 'August 2026', status: 'completed', date: '2026-08-04 10:24:15' }
   ],
@@ -97,7 +109,7 @@ const initialSeedData = {
 };
 
 const initializeDb = () => {
-  if (!fs.existsSync(DB_FILE) || fs.readFileSync(DB_FILE, 'utf8').trim() === '{}' || fs.readFileSync(DB_FILE, 'utf8').trim() === '{"tenants":[],"units":[],"payments":[],"maintenanceTickets":[],"announcements":[],"gatePasses":[]}') {
+  if (!fs.existsSync(DB_FILE)) {
     fs.writeFileSync(DB_FILE, JSON.stringify(initialSeedData, null, 2));
   }
 };
@@ -119,15 +131,16 @@ const saveDb = (data) => {
 };
 
 // =========================================================================
-// FRAPPE FRAMEWORK REST API PROTOCOL IMPLEMENTATION
+// FRAPPE & ERPNEXT REST API PROTOCOL ENDPOINTS
 // =========================================================================
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    framework: 'Frappe Framework REST API Bridge',
+    framework: 'Frappe Framework & ERPNext Accounts Bridge',
     app: 'tenant_portal',
+    modules: ['Accounts', 'Selling', 'Maintenance', 'Gate Pass'],
     timestamp: new Date().toISOString()
   });
 });
@@ -137,17 +150,14 @@ app.get('/api/resource/:doctype', (req, res) => {
   const db = getDb();
   const dt = decodeURIComponent(req.params.doctype).toLowerCase().replace(/\s+/g, '');
 
-  if (dt === 'tenant') {
-    return res.json({ data: db.tenants || [] });
-  } else if (dt === 'propertyunit' || dt === 'unit') {
-    return res.json({ data: db.units || [] });
-  } else if (dt === 'rentpayment' || dt === 'payment') {
-    return res.json({ data: db.payments || [] });
-  } else if (dt === 'maintenanceticket' || dt === 'maintenance') {
-    return res.json({ data: db.maintenanceTickets || [] });
-  } else if (dt === 'gatepass') {
-    return res.json({ data: db.gatePasses || [] });
-  }
+  if (dt === 'tenant') return res.json({ data: db.tenants || [] });
+  if (dt === 'propertyunit' || dt === 'unit') return res.json({ data: db.units || [] });
+  if (dt === 'salesinvoice') return res.json({ data: db.salesInvoices || [] });
+  if (dt === 'paymententry') return res.json({ data: db.paymentEntries || [] });
+  if (dt === 'glentry') return res.json({ data: db.glEntries || [] });
+  if (dt === 'rentpayment' || dt === 'payment') return res.json({ data: db.payments || [] });
+  if (dt === 'maintenanceticket' || dt === 'maintenance') return res.json({ data: db.maintenanceTickets || [] });
+  if (dt === 'gatepass') return res.json({ data: db.gatePasses || [] });
 
   res.json({ data: [] });
 });
@@ -173,7 +183,7 @@ app.post('/api/resource/:doctype', (req, res) => {
   res.status(201).json({ data: doc });
 });
 
-// Frappe Whitelisted RPC Endpoint: POST /api/method/tenant_portal.api.pay_rent_mpesa
+// Frappe Whitelisted RPC: pay_rent_mpesa
 app.post('/api/method/tenant_portal.api.pay_rent_mpesa', (req, res) => {
   const db = getDb();
   const { tenant_name, unit_number, amount, phone_number, payment_type, invoice_month } = req.body;
@@ -211,7 +221,7 @@ app.post('/api/method/tenant_portal.api.pay_rent_mpesa', (req, res) => {
   });
 });
 
-// Frappe Whitelisted RPC Endpoint: POST /api/method/tenant_portal.api.get_dashboard_stats
+// Frappe Whitelisted RPC: get_dashboard_stats
 app.post('/api/method/tenant_portal.api.get_dashboard_stats', (req, res) => {
   const db = getDb();
   const totalUnits = (db.units && db.units.length) || 24;
@@ -230,24 +240,16 @@ app.post('/api/method/tenant_portal.api.get_dashboard_stats', (req, res) => {
   });
 });
 
-// Legacy backward compatible endpoints
-app.get('/api/tenants', (req, res) => res.json(getDb().tenants || []));
-app.get('/api/maintenance', (req, res) => res.json(getDb().maintenanceTickets || []));
-app.post('/api/payments', (req, res) => {
+// ERPNext Whitelisted RPC: get_accounting_ledger
+app.post('/api/method/tenant_portal.erpnext_integrations.get_accounting_ledger', (req, res) => {
   const db = getDb();
-  const receiptNumber = `TH-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const txRef = `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-  const newPayment = {
-    ...req.body,
-    id: 'pay-' + Date.now(),
-    receiptNumber,
-    transactionRef: txRef,
-    status: 'completed',
-    date: new Date().toISOString().replace('T', ' ').substring(0, 19)
-  };
-  db.payments = [newPayment, ...(db.payments || [])];
-  saveDb(db);
-  res.status(201).json({ success: true, payment: newPayment, receiptNumber });
+  res.json({
+    message: {
+      sales_invoices: db.salesInvoices || [],
+      payment_entries: db.paymentEntries || [],
+      gl_entries: db.glEntries || []
+    }
+  });
 });
 
 // Favicon routes
@@ -284,12 +286,12 @@ if (fs.existsSync(distPath)) {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(distPath, 'index.html'));
     } else {
-      res.status(404).json({ error: 'Frappe API route not found' });
+      res.status(404).json({ error: 'Frappe / ERPNext API route not found' });
     }
   });
 }
 
 app.listen(PORT, () => {
-  console.log(`\n🏢 TenantHub (Frappe Framework Backend Bridge) is active on:`);
-  console.log(`   ➜  http://localhost:${PORT}/ (Frappe REST API + React SPA)\n`);
+  console.log(`\n🏢 TenantHub (ERPNext Accounts & Frappe Framework Bridge) is active on:`);
+  console.log(`   ➜  http://localhost:${PORT}/ (ERPNext REST API + React SPA)\n`);
 });

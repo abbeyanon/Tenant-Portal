@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserRole,
+  UserAccount,
   Tenant,
   Unit,
   PaymentRecord,
@@ -8,7 +9,10 @@ import {
   Announcement,
   GatePass,
   PropertyDocument,
-  PropertyStats
+  PropertyStats,
+  SalesInvoice,
+  PaymentEntry,
+  GLEntry
 } from '../types';
 import {
   initialTenants,
@@ -18,7 +22,10 @@ import {
   initialAnnouncements,
   initialGatePasses,
   initialDocuments,
-  initialStats
+  initialStats,
+  initialSalesInvoices,
+  initialPaymentEntries,
+  initialGLEntries
 } from '../data/mockData';
 
 interface Toast {
@@ -29,6 +36,12 @@ interface Toast {
 }
 
 interface TenantContextType {
+  // Auth
+  isAuthenticated: boolean;
+  currentUser: UserAccount;
+  login: (email: string, password?: string) => Promise<boolean>;
+  logout: () => void;
+
   currentRole: UserRole;
   switchRole: (role: UserRole) => void;
   activeTenant: Tenant;
@@ -42,10 +55,15 @@ interface TenantContextType {
   stats: PropertyStats;
   toasts: Toast[];
 
+  // ERPNext Accounting Module
+  salesInvoices: SalesInvoice[];
+  paymentEntries: PaymentEntry[];
+  glEntries: GLEntry[];
+
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
 
-  // Payment operations
+  // Payment operations (Creates ERPNext Payment Entry & GL Entry)
   payRent: (paymentData: {
     unitNumber: string;
     tenantName: string;
@@ -100,6 +118,33 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_user');
+      return saved ? JSON.parse(saved) : {
+        id: 'usr-tenant-1',
+        name: 'John Kamau',
+        email: 'john.kamau@example.com',
+        role: 'tenant',
+        unitNumber: 'Unit 4B',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
+      };
+    } catch {
+      return {
+        id: 'usr-tenant-1',
+        name: 'John Kamau',
+        email: 'john.kamau@example.com',
+        role: 'tenant',
+        unitNumber: 'Unit 4B'
+      };
+    }
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('tenanthub_auth') !== 'false';
+  });
+
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     return (localStorage.getItem('tenanthub_role') as UserRole) || 'tenant';
   });
@@ -158,6 +203,34 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
+  // ERPNext Accounting State
+  const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_sinv');
+      return saved ? JSON.parse(saved) : initialSalesInvoices;
+    } catch {
+      return initialSalesInvoices;
+    }
+  });
+
+  const [paymentEntries, setPaymentEntries] = useState<PaymentEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_pe');
+      return saved ? JSON.parse(saved) : initialPaymentEntries;
+    } catch {
+      return initialPaymentEntries;
+    }
+  });
+
+  const [glEntries, setGlEntries] = useState<GLEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_gl');
+      return saved ? JSON.parse(saved) : initialGLEntries;
+    } catch {
+      return initialGLEntries;
+    }
+  });
+
   const [documents] = useState<PropertyDocument[]>(initialDocuments);
   const [stats, setStats] = useState<PropertyStats>(initialStats);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -175,35 +248,71 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const activeTenant = allTenants[0];
 
   useEffect(() => {
+    localStorage.setItem('tenanthub_user', JSON.stringify(currentUser));
+    localStorage.setItem('tenanthub_auth', isAuthenticated ? 'true' : 'false');
     localStorage.setItem('tenanthub_role', currentRole);
-  }, [currentRole]);
+  }, [currentUser, isAuthenticated, currentRole]);
 
   useEffect(() => {
     localStorage.setItem('tenanthub_tenants', JSON.stringify(allTenants));
-  }, [allTenants]);
-
-  useEffect(() => {
     localStorage.setItem('tenanthub_units', JSON.stringify(units));
-  }, [units]);
-
-  useEffect(() => {
     localStorage.setItem('tenanthub_payments', JSON.stringify(payments));
-  }, [payments]);
-
-  useEffect(() => {
     localStorage.setItem('tenanthub_tickets', JSON.stringify(maintenanceTickets));
-  }, [maintenanceTickets]);
+    localStorage.setItem('tenanthub_sinv', JSON.stringify(salesInvoices));
+    localStorage.setItem('tenanthub_pe', JSON.stringify(paymentEntries));
+    localStorage.setItem('tenanthub_gl', JSON.stringify(glEntries));
+  }, [allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries]);
 
-  useEffect(() => {
-    localStorage.setItem('tenanthub_announcements', JSON.stringify(announcements));
-  }, [announcements]);
+  // Auth Methods
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    if (email.includes('admin') || email.includes('manager')) {
+      const managerUser: UserAccount = {
+        id: 'usr-manager-1',
+        name: 'Faith Chebet (Estate Director)',
+        email,
+        role: 'landlord',
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+      };
+      setCurrentUser(managerUser);
+      setCurrentRole('landlord');
+    } else {
+      const tenantUser: UserAccount = {
+        id: 'usr-tenant-1',
+        name: 'John Kamau',
+        email,
+        role: 'tenant',
+        unitNumber: 'Unit 4B',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
+      };
+      setCurrentUser(tenantUser);
+      setCurrentRole('tenant');
+    }
 
-  useEffect(() => {
-    localStorage.setItem('tenanthub_gatepasses', JSON.stringify(gatePasses));
-  }, [gatePasses]);
+    setIsAuthenticated(true);
+    addToast({
+      type: 'success',
+      title: 'Authentication Successful',
+      message: `Signed in as ${email}. Connected to Frappe & ERPNext session.`
+    });
+    return true;
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    addToast({
+      type: 'info',
+      title: 'Signed Out',
+      message: 'You have been logged out of the tenant portal.'
+    });
+  };
 
   const switchRole = (role: UserRole) => {
     setCurrentRole(role);
+    setCurrentUser((prev) => ({
+      ...prev,
+      role,
+      name: role === 'tenant' ? 'John Kamau' : 'Faith Chebet (Estate Director)'
+    }));
     addToast({
       type: 'info',
       title: 'Workspace Switched',
@@ -227,7 +336,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return `KES ${amount.toLocaleString()}`;
   };
 
-  // Payment Processing Simulation
+  // Payment Processing Simulation (With ERPNext Accounts Integration)
   const payRent = async (data: {
     unitNumber: string;
     tenantName: string;
@@ -260,7 +369,55 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setPayments((prev) => [newPayment, ...prev]);
 
-    // Update tenant balance & status
+    // 1. Create ERPNext Payment Entry
+    const newPE: PaymentEntry = {
+      id: 'pe-' + Date.now(),
+      voucherNumber: `ACC-PAY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      partyName: data.tenantName,
+      unitNumber: data.unitNumber,
+      paidAmount: data.amount,
+      modeOfPayment: data.method === 'mpesa' ? 'M-Pesa' : data.method === 'card' ? 'Card' : 'Bank Transfer',
+      paidToAccount: '1120 - Safaricom M-Pesa Till Account',
+      referenceNo: txRef,
+      postingDate: new Date().toISOString().split('T')[0],
+      remarks: `${data.invoiceMonth} ${data.type.toUpperCase()} settlement for ${data.unitNumber}`
+    };
+    setPaymentEntries((prev) => [newPE, ...prev]);
+
+    // 2. Post dual General Ledger (GL) Entries in ERPNext Accounts
+    const glDebit: GLEntry = {
+      id: 'gl-' + Date.now() + '-dr',
+      voucherType: 'Payment Entry',
+      voucherNo: newPE.voucherNumber,
+      account: '1120 - Safaricom M-Pesa Till Account',
+      debit: data.amount,
+      credit: 0,
+      postingDate: new Date().toISOString().split('T')[0],
+      remarks: `M-Pesa payment received Ref: ${txRef}`
+    };
+
+    const glCredit: GLEntry = {
+      id: 'gl-' + Date.now() + '-cr',
+      voucherType: 'Payment Entry',
+      voucherNo: newPE.voucherNumber,
+      account: `1310 - Debtors / Accounts Receivable (${data.tenantName})`,
+      debit: 0,
+      credit: data.amount,
+      postingDate: new Date().toISOString().split('T')[0],
+      remarks: `Accounts Receivable settlement against ${data.unitNumber}`
+    };
+    setGlEntries((prev) => [glDebit, glCredit, ...prev]);
+
+    // 3. Mark corresponding ERPNext Sales Invoice as Paid
+    setSalesInvoices((prev) =>
+      prev.map((inv) =>
+        inv.unitNumber === data.unitNumber
+          ? { ...inv, status: 'Paid', outstandingAmount: Math.max(0, inv.outstandingAmount - data.amount) }
+          : inv
+      )
+    );
+
+    // 4. Update tenant balance
     setAllTenants((prev) =>
       prev.map((t) => {
         if (t.unitNumber === data.unitNumber) {
@@ -284,8 +441,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     addToast({
       type: 'success',
-      title: 'Payment Confirmed! 🏠',
-      message: `${formatCurrency(data.amount)} received for ${data.unitNumber}. Receipt #${receiptNumber} generated.`
+      title: 'Payment Reconciled in ERPNext 🧾',
+      message: `${formatCurrency(data.amount)} posted to ERPNext Accounts. Receipt #${receiptNumber} generated.`
     });
 
     return { success: true, payment: newPayment, receiptNumber };
@@ -302,7 +459,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ticketNumber: ticketNo,
       status: 'reported',
       reportedDate: new Date().toISOString().split('T')[0],
-      notes: ['Ticket logged by resident tenant.']
+      notes: ['Ticket logged in Frappe system.']
     };
 
     setMaintenanceTickets((prev) => [newTicket, ...prev]);
@@ -315,7 +472,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'success',
       title: 'Maintenance Request Logged',
-      message: `Ticket #${ticketNo} created. Property manager has been notified.`
+      message: `Ticket #${ticketNo} created in Frappe. Property manager has been notified.`
     });
   };
 
@@ -413,7 +570,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // Tenant Operations
+  // Tenant Operations (With ERPNext Customer & Sales Invoice Generation)
   const addTenant = (tenantData: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => {
     const newTenant: Tenant = {
       ...tenantData,
@@ -423,6 +580,22 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setAllTenants((prev) => [newTenant, ...prev]);
+
+    // Create automatic ERPNext Sales Invoice for the new tenant
+    const newInvoice: SalesInvoice = {
+      id: 'sinv-' + Date.now(),
+      invoiceNumber: `ACC-SINV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      customerName: newTenant.name,
+      unitNumber: newTenant.unitNumber,
+      grandTotal: newTenant.rentAmount,
+      outstandingAmount: 0,
+      status: 'Paid',
+      postingDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date().toISOString().split('T')[0],
+      incomeAccount: '4110 - Rental Income - Emerald Heights',
+      costCenter: 'Emerald Heights - Operations'
+    };
+    setSalesInvoices((prev) => [newInvoice, ...prev]);
 
     // Check if unit already exists, otherwise create it
     setUnits((prev) => {
@@ -471,8 +644,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     addToast({
       type: 'success',
-      title: 'Tenant Registered & Unit Assigned',
-      message: `${newTenant.name} registered and assigned to ${newTenant.unitNumber}.`
+      title: 'Tenant Registered in ERPNext',
+      message: `${newTenant.name} registered and Customer & Sales Invoice created in ERPNext Accounts.`
     });
   };
 
@@ -538,6 +711,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <TenantContext.Provider
       value={{
+        isAuthenticated,
+        currentUser,
+        login,
+        logout,
         currentRole,
         switchRole,
         activeTenant,
@@ -550,6 +727,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         documents,
         stats,
         toasts,
+        salesInvoices,
+        paymentEntries,
+        glEntries,
         addToast,
         removeToast,
         payRent,

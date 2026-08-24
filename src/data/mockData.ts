@@ -383,3 +383,116 @@ export const initialStats: PropertyStats = {
   totalPendingArrears: 96000,
   activeMaintenanceTickets: 3
 };
+
+// ERPNext Accounting Seed Records
+export const initialSalesInvoices: SalesInvoice[] = [
+  {
+    id: 'sinv-001',
+    invoiceNumber: 'ACC-SINV-2026-0801',
+    customerName: 'John Kamau',
+    unitNumber: 'Unit 4B',
+    grandTotal: 48000,
+    outstandingAmount: 0,
+    status: 'Paid',
+    postingDate: '2026-08-01',
+    dueDate: '2026-08-05',
+    incomeAccount: '4110 - Rental Income - Emerald Heights',
+    costCenter: 'Emerald Heights - Operations'
+  },
+  {
+    id: 'sinv-002',
+    invoiceNumber: 'ACC-SINV-2026-0802',
+    customerName: 'Sarah Mutua',
+    unitNumber: 'Unit 2A',
+    grandTotal: 48000,
+    outstandingAmount: 48000,
+    status: 'Unpaid',
+    postingDate: '2026-08-01',
+    dueDate: '2026-08-05',
+    incomeAccount: '4110 - Rental Income - Emerald Heights',
+    costCenter: 'Emerald Heights - Operations'
+  },
+  {
+    id: 'sinv-003',
+    invoiceNumber: 'ACC-SINV-2026-0803',
+    customerName: 'David Omondi',
+    unitNumber: 'Unit 1C',
+    grandTotal: 38000,
+    outstandingAmount: 76000,
+    status: 'Overdue',
+    postingDate: '2026-08-01',
+    dueDate: '2026-08-05',
+    incomeAccount: '4110 - Rental Income - Emerald Heights',
+    costCenter: 'Emerald Heights - Operations'
+  }
+];
+
+export const initialPaymentEntries: PaymentEntry[] = [
+  {
+    id: 'pe-001',
+    voucherNumber: 'ACC-PAY-2026-0089',
+    partyName: 'John Kamau',
+    unitNumber: 'Unit 4B',
+    paidAmount: 48000,
+    modeOfPayment: 'M-Pesa',
+    paidToAccount: '1120 - Safaricom M-Pesa Till Account',
+    referenceNo: 'QKD8921KL9',
+    postingDate: '2026-08-04',
+    remarks: 'August 2026 Rent Settlement for Unit 4B'
+  },
+  {
+    id: 'pe-002',
+    voucherNumber: 'ACC-PAY-2026-0090',
+    partyName: 'John Kamau',
+    unitNumber: 'Unit 4B',
+    paidAmount: 3200,
+    modeOfPayment: 'M-Pesa',
+    paidToAccount: '1120 - Safaricom M-Pesa Till Account',
+    referenceNo: 'QKX4410LM2',
+    postingDate: '2026-08-05',
+    remarks: 'Water Utility meter settlement for Unit 4B'
+  }
+];
+
+export const initialGLEntries: GLEntry[] = [
+  {
+    id: 'gl-001',
+    voucherType: 'Sales Invoice',
+    voucherNo: 'ACC-SINV-2026-0801',
+    account: '1310 - Debtors / Accounts Receivable (John Kamau)',
+    debit: 48000,
+    credit: 0,
+    postingDate: '2026-08-01',
+    remarks: 'Rent Invoice for Unit 4B'
+  },
+  {
+    id: 'gl-002',
+    voucherType: 'Sales Invoice',
+    voucherNo: 'ACC-SINV-2026-0801',
+    account: '4110 - Rental Income - Emerald Heights',
+    debit: 0,
+    credit: 48000,
+    postingDate: '2026-08-01',
+    remarks: 'Rental Income recognized for August 2026'
+  },
+  {
+    id: 'gl-003',
+    voucherType: 'Payment Entry',
+    voucherNo: 'ACC-PAY-2026-0089',
+    account: '1120 - Safaricom M-Pesa Till Account',
+    debit: 48000,
+    credit: 0,
+    postingDate: '2026-08-04',
+    remarks: 'M-Pesa rent receipt QKD8921KL9'
+  },
+  {
+    id: 'gl-004',
+    voucherType: 'Payment Entry',
+    voucherNo: 'ACC-PAY-2026-0089',
+    account: '1310 - Debtors / Accounts Receivable (John Kamau)',
+    debit: 0,
+    credit: 48000,
+    postingDate: '2026-08-04',
+    remarks: 'Debtor settlement against ACC-SINV-2026-0801'
+  }
+];

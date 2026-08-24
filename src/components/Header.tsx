@@ -18,7 +18,10 @@ import {
   X,
   PlusCircle,
   PhoneCall,
-  UserPlus
+  UserPlus,
+  DollarSign,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -29,6 +32,9 @@ export const Header: React.FC = () => {
     switchRole,
     activeTenant,
     announcements,
+    isAuthenticated,
+    currentUser,
+    logout,
     setIsPayRentModalOpen,
     setIsMaintenanceModalOpen,
     setIsGatePassModalOpen,
@@ -111,13 +117,13 @@ export const Header: React.FC = () => {
                 Tenant<span className="text-brand-600 dark:text-brand-400">Hub</span>
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wider uppercase block">
-                Resident & Property Portal
+                Frappe & ERPNext Connected
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             <Link
               to="/"
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
@@ -129,7 +135,6 @@ export const Header: React.FC = () => {
               Dashboard
             </Link>
 
-            {/* Units Inventory Link */}
             <Link
               to="/units"
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
@@ -139,10 +144,9 @@ export const Header: React.FC = () => {
               }`}
             >
               <Building2 className="w-4 h-4 text-blue-600" />
-              <span>Units List</span>
+              <span>Units</span>
             </Link>
 
-            {/* Tenant List / Directory Link */}
             <Link
               to="/tenants"
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
@@ -152,7 +156,20 @@ export const Header: React.FC = () => {
               }`}
             >
               <Users className="w-4 h-4 text-purple-600" />
-              <span>Tenants Directory</span>
+              <span>Tenants</span>
+            </Link>
+
+            {/* ERPNext Accounting Link */}
+            <Link
+              to="/accounting"
+              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                isActive('/accounting')
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 font-bold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <span>ERPNext Accounts</span>
             </Link>
 
             <Link
@@ -163,7 +180,7 @@ export const Header: React.FC = () => {
                   : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
               }`}
             >
-              Rent & Billing
+              Billing
             </Link>
 
             <Link
@@ -185,7 +202,7 @@ export const Header: React.FC = () => {
                   : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
               }`}
             >
-              Visitor Pass
+              Gate Pass
             </Link>
 
             <Link
@@ -196,45 +213,25 @@ export const Header: React.FC = () => {
                   : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
               }`}
             >
-              Lease & Docs
-            </Link>
-
-            <Link
-              to="/settings"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/settings')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Settings
+              Docs
             </Link>
           </nav>
 
           {/* Right Action Icons & Buttons */}
           <div className="flex items-center gap-2.5">
-            {/* Add Unit Button */}
-            <button
-              onClick={() => setIsAddUnitModalOpen(true)}
-              className="hidden xl:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm transition"
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>+ Unit</span>
-            </button>
-
-            {/* Direct Add Tenant Button */}
+            {/* Add Tenant Button */}
             <button
               onClick={() => setIsAddTenantModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition transform hover:-translate-y-0.5"
+              className="hidden lg:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition"
             >
-              <UserPlus className="w-4 h-4" />
-              <span>+ Add Tenant</span>
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Tenant</span>
             </button>
 
             {/* Quick Action CTA Button for Rent Payment */}
             <button
               onClick={() => setIsPayRentModalOpen(true)}
-              className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
             >
               <CreditCard className="w-4 h-4" />
               <span>Pay Rent (M-Pesa)</span>
@@ -276,25 +273,45 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* User Mini Card */}
-            <Link
-              to="/settings"
-              className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold"
-            >
-              {activeTenant.avatar ? (
-                <img src={activeTenant.avatar} alt={activeTenant.name} className="w-7 h-7 rounded-lg object-cover" />
-              ) : (
-                <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
-                  {activeTenant.name.charAt(0)}
-                </div>
-              )}
-              <span className="hidden md:inline">{currentRole === 'tenant' ? 'Unit 4B' : 'Manager'}</span>
-            </Link>
+            {/* Login / Auth Button or User Mini Card */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold"
+                >
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
+                      {currentUser.name.charAt(0)}
+                    </div>
+                  )}
+                  <span className="hidden md:inline">{currentRole === 'tenant' ? 'Unit 4B' : 'Director'}</span>
+                </Link>
+
+                <button
+                  onClick={logout}
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-500 hover:text-rose-600 transition"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md hover:bg-brand-500 transition"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Login</span>
+              </Link>
+            )}
 
             {/* Mobile Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
+              className="xl:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -304,7 +321,7 @@ export const Header: React.FC = () => {
 
       {/* 3. Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
+        <div className="xl:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
           <div className="grid grid-cols-2 gap-2 text-xs font-bold">
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Dashboard
@@ -314,6 +331,9 @@ export const Header: React.FC = () => {
             </Link>
             <Link to="/tenants" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
               Tenants List
+            </Link>
+            <Link to="/accounting" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+              ERPNext Accounts
             </Link>
             <Link to="/payments" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Rent & Billing
@@ -325,10 +345,13 @@ export const Header: React.FC = () => {
               Visitor Gate Pass
             </Link>
             <Link to="/documents" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Lease & Documents
+              Lease Documents
             </Link>
             <Link to="/settings" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Settings & Profile
+            </Link>
+            <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold">
+              Login Page
             </Link>
           </div>
 
@@ -342,17 +365,6 @@ export const Header: React.FC = () => {
             >
               <UserPlus className="w-4 h-4" />
               <span>+ Onboard New Tenant</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsAddUnitModalOpen(true);
-              }}
-              className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>+ Add Apartment Unit</span>
             </button>
 
             <button

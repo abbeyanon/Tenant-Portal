@@ -1,5 +1,15 @@
 export type UserRole = 'tenant' | 'landlord' | 'manager';
 
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  unitNumber?: string;
+  avatar?: string;
+  token?: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -109,4 +119,46 @@ export interface PropertyStats {
   totalCollectedThisMonth: number;
   totalPendingArrears: number;
   activeMaintenanceTickets: number;
+}
+
+// =========================================================================
+// ERPNEXT ACCOUNTING MODULE TYPES
+// =========================================================================
+
+export interface SalesInvoice {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  unitNumber: string;
+  grandTotal: number;
+  outstandingAmount: number;
+  status: 'Paid' | 'Unpaid' | 'Overdue';
+  postingDate: string;
+  dueDate: string;
+  incomeAccount: string;
+  costCenter: string;
+}
+
+export interface PaymentEntry {
+  id: string;
+  voucherNumber: string;
+  partyName: string;
+  unitNumber: string;
+  paidAmount: number;
+  modeOfPayment: 'M-Pesa' | 'Card' | 'Bank Transfer' | 'Cash';
+  paidToAccount: string;
+  referenceNo: string;
+  postingDate: string;
+  remarks: string;
+}
+
+export interface GLEntry {
+  id: string;
+  voucherType: 'Sales Invoice' | 'Payment Entry';
+  voucherNo: string;
+  account: string;
+  debit: number;
+  credit: number;
+  postingDate: string;
+  remarks: string;
 }
