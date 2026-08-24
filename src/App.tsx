@@ -6,9 +6,11 @@ import { PayRentModal } from './components/PayRentModal';
 import { MaintenanceModal } from './components/MaintenanceModal';
 import { GatePassModal } from './components/GatePassModal';
 import { AddTenantModal } from './components/AddTenantModal';
+import { AddUnitModal } from './components/AddUnitModal';
 import { ToastContainer } from './components/ToastContainer';
 
 import { DashboardPage } from './pages/DashboardPage';
+import { UnitsPage } from './pages/UnitsPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { MaintenancePage } from './pages/MaintenancePage';
@@ -24,6 +26,7 @@ export const App: React.FC = () => {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/units" element={<UnitsPage />} />
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
@@ -40,6 +43,7 @@ export const App: React.FC = () => {
       <MaintenanceModal />
       <GatePassModal />
       <AddTenantModal />
+      <AddUnitModal />
       <ToastContainer />
     </div>
   );

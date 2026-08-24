@@ -9,6 +9,135 @@ import {
   PropertyStats
 } from '../types';
 
+export const initialUnits: Unit[] = [
+  {
+    id: 'u-1a',
+    unitNumber: 'Unit 1A',
+    propertyName: 'Emerald Heights Residences',
+    floor: 1,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 720,
+    rentAmount: 38000,
+    depositAmount: 38000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-1b',
+    unitNumber: 'Unit 1B',
+    propertyName: 'Emerald Heights Residences',
+    floor: 1,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 720,
+    rentAmount: 38000,
+    depositAmount: 38000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-1c',
+    unitNumber: 'Unit 1C',
+    propertyName: 'Emerald Heights Residences',
+    floor: 1,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 750,
+    rentAmount: 38000,
+    depositAmount: 38000,
+    status: 'occupied',
+    currentTenantId: 't-103',
+    currentTenantName: 'David Omondi'
+  },
+  {
+    id: 'u-2a',
+    unitNumber: 'Unit 2A',
+    propertyName: 'Emerald Heights Residences',
+    floor: 2,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1150,
+    rentAmount: 48000,
+    depositAmount: 48000,
+    status: 'occupied',
+    currentTenantId: 't-102',
+    currentTenantName: 'Sarah Mutua'
+  },
+  {
+    id: 'u-2b',
+    unitNumber: 'Unit 2B',
+    propertyName: 'Emerald Heights Residences',
+    floor: 2,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1150,
+    rentAmount: 48000,
+    depositAmount: 48000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-3a',
+    unitNumber: 'Unit 3A',
+    propertyName: 'Emerald Heights Residences',
+    floor: 3,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1200,
+    rentAmount: 50000,
+    depositAmount: 50000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-3c',
+    unitNumber: 'Unit 3C',
+    propertyName: 'Emerald Heights Residences',
+    floor: 3,
+    bedrooms: 3,
+    bathrooms: 3,
+    squareFeet: 1600,
+    rentAmount: 65000,
+    depositAmount: 65000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-4a',
+    unitNumber: 'Unit 4A',
+    propertyName: 'Emerald Heights Residences',
+    floor: 4,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1150,
+    rentAmount: 48000,
+    depositAmount: 48000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-4b',
+    unitNumber: 'Unit 4B',
+    propertyName: 'Emerald Heights Residences',
+    floor: 4,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1150,
+    rentAmount: 48000,
+    depositAmount: 48000,
+    status: 'occupied',
+    currentTenantId: 't-101',
+    currentTenantName: 'John Kamau'
+  },
+  {
+    id: 'u-5a',
+    unitNumber: 'Unit 5A (Penthouse)',
+    propertyName: 'Emerald Heights Residences',
+    floor: 5,
+    bedrooms: 3,
+    bathrooms: 3,
+    squareFeet: 1850,
+    rentAmount: 85000,
+    depositAmount: 85000,
+    status: 'maintenance'
+  }
+];
+
 export const initialTenants: Tenant[] = [
   {
     id: 't-101',
@@ -75,75 +204,6 @@ export const initialTenants: Tenant[] = [
     },
     vehiclePlate: 'KCL 190P',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop'
-  }
-];
-
-export const initialUnits: Unit[] = [
-  {
-    id: 'u-4b',
-    unitNumber: 'Unit 4B',
-    propertyName: 'Emerald Heights Residences',
-    floor: 4,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1150,
-    rentAmount: 48000,
-    depositAmount: 48000,
-    status: 'occupied',
-    currentTenantId: 't-101',
-    currentTenantName: 'John Kamau'
-  },
-  {
-    id: 'u-2a',
-    unitNumber: 'Unit 2A',
-    propertyName: 'Emerald Heights Residences',
-    floor: 2,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1150,
-    rentAmount: 48000,
-    depositAmount: 48000,
-    status: 'occupied',
-    currentTenantId: 't-102',
-    currentTenantName: 'Sarah Mutua'
-  },
-  {
-    id: 'u-1c',
-    unitNumber: 'Unit 1C',
-    propertyName: 'Emerald Heights Residences',
-    floor: 1,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFeet: 750,
-    rentAmount: 38000,
-    depositAmount: 38000,
-    status: 'occupied',
-    currentTenantId: 't-103',
-    currentTenantName: 'David Omondi'
-  },
-  {
-    id: 'u-3c',
-    unitNumber: 'Unit 3C',
-    propertyName: 'Emerald Heights Residences',
-    floor: 3,
-    bedrooms: 3,
-    bathrooms: 3,
-    squareFeet: 1600,
-    rentAmount: 65000,
-    depositAmount: 65000,
-    status: 'vacant'
-  },
-  {
-    id: 'u-5a',
-    unitNumber: 'Unit 5A (Penthouse)',
-    propertyName: 'Emerald Heights Residences',
-    floor: 5,
-    bedrooms: 3,
-    bathrooms: 3,
-    squareFeet: 1850,
-    rentAmount: 85000,
-    depositAmount: 85000,
-    status: 'maintenance'
   }
 ];
 

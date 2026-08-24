@@ -32,7 +32,8 @@ export const Header: React.FC = () => {
     setIsPayRentModalOpen,
     setIsMaintenanceModalOpen,
     setIsGatePassModalOpen,
-    setIsAddTenantModalOpen
+    setIsAddTenantModalOpen,
+    setIsAddUnitModalOpen
   } = useTenant();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -116,7 +117,7 @@ export const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1.5">
+          <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/"
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
@@ -126,6 +127,19 @@ export const Header: React.FC = () => {
               }`}
             >
               Dashboard
+            </Link>
+
+            {/* Units Inventory Link */}
+            <Link
+              to="/units"
+              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                isActive('/units')
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 font-bold'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-blue-600" />
+              <span>Units List</span>
             </Link>
 
             {/* Tenant List / Directory Link */}
@@ -198,8 +212,17 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Right Action Icons & Buttons */}
-          <div className="flex items-center gap-3">
-            {/* Direct Add Tenant Button for Property Managers & Quick access */}
+          <div className="flex items-center gap-2.5">
+            {/* Add Unit Button */}
+            <button
+              onClick={() => setIsAddUnitModalOpen(true)}
+              className="hidden xl:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm transition"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>+ Unit</span>
+            </button>
+
+            {/* Direct Add Tenant Button */}
             <button
               onClick={() => setIsAddTenantModalOpen(true)}
               className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition transform hover:-translate-y-0.5"
@@ -286,6 +309,9 @@ export const Header: React.FC = () => {
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
               Dashboard
             </Link>
+            <Link to="/units" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+              Units List
+            </Link>
             <Link to="/tenants" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
               Tenants List
             </Link>
@@ -316,6 +342,17 @@ export const Header: React.FC = () => {
             >
               <UserPlus className="w-4 h-4" />
               <span>+ Onboard New Tenant</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsAddUnitModalOpen(true);
+              }}
+              className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Building2 className="w-4 h-4" />
+              <span>+ Add Apartment Unit</span>
             </button>
 
             <button

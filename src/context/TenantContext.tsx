@@ -68,9 +68,13 @@ interface TenantContextType {
   // Announcements
   broadcastAnnouncement: (announcement: Omit<Announcement, 'id' | 'date'>) => void;
 
-  // Landlord tenant operations
+  // Tenant operations
   addTenant: (tenant: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => void;
   sendPaymentReminder: (tenantId: string) => void;
+
+  // Unit operations
+  addUnit: (unit: Omit<Unit, 'id'>) => void;
+  updateUnitStatus: (unitId: string, status: Unit['status']) => void;
 
   // Modals controller state
   isPayRentModalOpen: boolean;
@@ -83,6 +87,10 @@ interface TenantContextType {
   setIsAnnouncementModalOpen: (open: boolean) => void;
   isAddTenantModalOpen: boolean;
   setIsAddTenantModalOpen: (open: boolean) => void;
+  isAddUnitModalOpen: boolean;
+  setIsAddUnitModalOpen: (open: boolean) => void;
+  preselectedUnitNumber: string | null;
+  setPreselectedUnitNumber: (unitNumber: string | null) => void;
   activeReceipt: PaymentRecord | null;
   setActiveReceipt: (receipt: PaymentRecord | null) => void;
 
@@ -160,6 +168,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isGatePassModalOpen, setIsGatePassModalOpen] = useState(false);
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
+  const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
+  const [preselectedUnitNumber, setPreselectedUnitNumber] = useState<string | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<PaymentRecord | null>(null);
 
   const activeTenant = allTenants[0];
@@ -171,6 +181,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     localStorage.setItem('tenanthub_tenants', JSON.stringify(allTenants));
   }, [allTenants]);
+
+  useEffect(() => {
+    localStorage.setItem('tenanthub_units', JSON.stringify(units));
+  }, [units]);
 
   useEffect(() => {
     localStorage.setItem('tenanthub_payments', JSON.stringify(payments));
@@ -399,7 +413,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  // Landlord Operations
+  // Tenant Operations
   const addTenant = (tenantData: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => {
     const newTenant: Tenant = {
       ...tenantData,
@@ -410,19 +424,55 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setAllTenants((prev) => [newTenant, ...prev]);
 
-    // Mark unit occupied
-    setUnits((prev) =>
-      prev.map((u) =>
-        u.unitNumber === tenantData.unitNumber
-          ? { ...u, status: 'occupied', currentTenantId: newTenant.id, currentTenantName: newTenant.name }
-          : u
-      )
-    );
+    // Check if unit already exists, otherwise create it
+    setUnits((prev) => {
+      const existing = prev.find((u) => u.unitNumber === tenantData.unitNumber);
+      if (existing) {
+        return prev.map((u) =>
+          u.unitNumber === tenantData.unitNumber
+            ? {
+                ...u,
+                status: 'occupied',
+                currentTenantId: newTenant.id,
+                currentTenantName: newTenant.name,
+                rentAmount: tenantData.rentAmount || u.rentAmount,
+                depositAmount: tenantData.depositAmount || u.depositAmount
+              }
+            : u
+        );
+      } else {
+        const newUnit: Unit = {
+          id: 'u-' + Date.now(),
+          unitNumber: tenantData.unitNumber,
+          propertyName: tenantData.propertyName || 'Emerald Heights Residences',
+          floor: 1,
+          bedrooms: 2,
+          bathrooms: 2,
+          squareFeet: 1100,
+          rentAmount: tenantData.rentAmount,
+          depositAmount: tenantData.depositAmount,
+          status: 'occupied',
+          currentTenantId: newTenant.id,
+          currentTenantName: newTenant.name
+        };
+        return [newUnit, ...prev];
+      }
+    });
+
+    // Update stats
+    setStats((prev) => {
+      const occupied = prev.occupiedUnits + 1;
+      return {
+        ...prev,
+        occupiedUnits: occupied,
+        occupancyRate: Math.round((occupied / Math.max(occupied, prev.totalUnits)) * 100)
+      };
+    });
 
     addToast({
       type: 'success',
-      title: 'Tenant Onboarded',
-      message: `${newTenant.name} registered for ${newTenant.unitNumber}.`
+      title: 'Tenant Registered & Unit Assigned',
+      message: `${newTenant.name} registered and assigned to ${newTenant.unitNumber}.`
     });
   };
 
@@ -434,6 +484,54 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       type: 'info',
       title: 'Rent Reminder Dispatched 📱',
       message: `SMS & In-App reminder sent to ${t.name} (${t.phone}) for ${formatCurrency(t.balanceDue || t.rentAmount)}.`
+    });
+  };
+
+  // Unit Operations
+  const addUnit = (unitData: Omit<Unit, 'id'>) => {
+    const newUnit: Unit = {
+      ...unitData,
+      id: 'u-' + Date.now()
+    };
+
+    setUnits((prev) => [newUnit, ...prev]);
+
+    setStats((prev) => {
+      const total = prev.totalUnits + 1;
+      const occupied = unitData.status === 'occupied' ? prev.occupiedUnits + 1 : prev.occupiedUnits;
+      return {
+        ...prev,
+        totalUnits: total,
+        occupiedUnits: occupied,
+        occupancyRate: Math.round((occupied / total) * 100)
+      };
+    });
+
+    addToast({
+      type: 'success',
+      title: 'Unit Added to Inventory',
+      message: `${newUnit.unitNumber} (${newUnit.bedrooms} Bed) added to estate inventory.`
+    });
+  };
+
+  const updateUnitStatus = (unitId: string, status: Unit['status']) => {
+    setUnits((prev) =>
+      prev.map((u) =>
+        u.id === unitId
+          ? {
+              ...u,
+              status,
+              currentTenantId: status === 'vacant' ? undefined : u.currentTenantId,
+              currentTenantName: status === 'vacant' ? undefined : u.currentTenantName
+            }
+          : u
+      )
+    );
+
+    addToast({
+      type: 'info',
+      title: 'Unit Status Updated',
+      message: `Unit status set to ${status}.`
     });
   };
 
@@ -462,6 +560,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         broadcastAnnouncement,
         addTenant,
         sendPaymentReminder,
+        addUnit,
+        updateUnitStatus,
         isPayRentModalOpen,
         setIsPayRentModalOpen,
         isMaintenanceModalOpen,
@@ -472,6 +572,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsAnnouncementModalOpen,
         isAddTenantModalOpen,
         setIsAddTenantModalOpen,
+        isAddUnitModalOpen,
+        setIsAddUnitModalOpen,
+        preselectedUnitNumber,
+        setPreselectedUnitNumber,
         activeReceipt,
         setActiveReceipt,
         formatCurrency
