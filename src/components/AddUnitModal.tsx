@@ -4,10 +4,10 @@ import { Building2, X, PlusCircle, Home } from 'lucide-react';
 import { Unit } from '../types';
 
 export const AddUnitModal: React.FC = () => {
-  const { isAddUnitModalOpen, setIsAddUnitModalOpen, addUnit } = useTenant();
+  const { isAddUnitModalOpen, setIsAddUnitModalOpen, properties, addUnit } = useTenant();
 
+  const [propertyId, setPropertyId] = useState(properties[0]?.id || 'prop-1');
   const [unitNumber, setUnitNumber] = useState('');
-  const [propertyName, setPropertyName] = useState('Emerald Heights Residences');
   const [floor, setFloor] = useState<number>(1);
   const [bedrooms, setBedrooms] = useState<number>(2);
   const [bathrooms, setBathrooms] = useState<number>(2);
@@ -18,13 +18,16 @@ export const AddUnitModal: React.FC = () => {
 
   if (!isAddUnitModalOpen) return null;
 
+  const selectedProp = properties.find((p) => p.id === propertyId) || properties[0];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!unitNumber) return;
 
     addUnit({
       unitNumber,
-      propertyName,
+      propertyId: selectedProp?.id || 'prop-1',
+      propertyName: selectedProp?.name || 'Emerald Heights Luxury Residences',
       floor,
       bedrooms,
       bathrooms,
@@ -60,50 +63,59 @@ export const AddUnitModal: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Add New Apartment Unit</h3>
-            <p className="text-xs text-slate-500">Register a new unit into estate inventory</p>
+            <p className="text-xs text-slate-500">Link unit to a specific property in your portfolio</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Property Selector */}
+          <div>
+            <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
+              Link to Property / Estate *
+            </label>
+            <select
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
+              className="w-full bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  🏢 {p.name} ({p.location})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Unit Number / Name *</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Unit 6B, Penthouse 2"
+                placeholder="e.g. Unit 6B, Suite 301"
                 value={unitNumber}
                 onChange={(e) => setUnitNumber(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Estate / Building</label>
-              <input
-                type="text"
-                value={propertyName}
-                onChange={(e) => setPropertyName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            <div>
               <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Floor Level</label>
               <input
                 type="number"
                 value={floor}
                 onChange={(e) => setFloor(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
+                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Bedrooms</label>
               <select
                 value={bedrooms}
                 onChange={(e) => setBedrooms(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs"
+                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2.5 text-xs font-semibold"
               >
                 <option value={1}>1 Bed</option>
                 <option value={2}>2 Bed</option>
@@ -112,12 +124,12 @@ export const AddUnitModal: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Baths</label>
+              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Bathrooms</label>
               <input
                 type="number"
                 value={bathrooms}
                 onChange={(e) => setBathrooms(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
+                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold"
               />
             </div>
             <div>
@@ -126,7 +138,7 @@ export const AddUnitModal: React.FC = () => {
                 type="number"
                 value={squareFeet}
                 onChange={(e) => setSquareFeet(Number(e.target.value))}
-                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
+                className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold"
               />
             </div>
           </div>
@@ -155,7 +167,7 @@ export const AddUnitModal: React.FC = () => {
           </div>
 
           <div>
-            <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Initial Unit Status</label>
+            <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Unit Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
@@ -163,7 +175,7 @@ export const AddUnitModal: React.FC = () => {
             >
               <option value="vacant">Vacant (Ready to Lease)</option>
               <option value="occupied">Occupied</option>
-              <option value="maintenance">Under Maintenance / Renovation</option>
+              <option value="maintenance">Under Maintenance</option>
             </select>
           </div>
 
@@ -171,7 +183,7 @@ export const AddUnitModal: React.FC = () => {
             type="submit"
             className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/20 mt-2"
           >
-            Save & Add Unit to Inventory
+            Save & Add Unit to {selectedProp?.name || 'Property'}
           </button>
         </form>
       </div>

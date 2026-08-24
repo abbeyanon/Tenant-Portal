@@ -11,16 +11,13 @@ import {
   Clock,
   AlertTriangle,
   Users,
-  DollarSign,
-  Maximize2,
-  Bed,
-  Bath,
-  Layers
+  DollarSign
 } from 'lucide-react';
 import { Unit } from '../types';
 
 export const UnitsPage: React.FC = () => {
   const {
+    properties,
     units,
     allTenants,
     formatCurrency,
@@ -28,55 +25,30 @@ export const UnitsPage: React.FC = () => {
     updateUnitStatus,
     setIsAddUnitModalOpen,
     setIsAddTenantModalOpen,
-    setPreselectedUnitNumber
+    setPreselectedUnitNumber,
+    selectedPropertyId,
+    setSelectedPropertyId
   } = useTenant();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'vacant' | 'occupied' | 'maintenance'>('all');
 
-  // Inline unit form state
-  const [showInlineUnitForm, setShowInlineUnitForm] = useState(false);
-  const [newUnitNumber, setNewUnitNumber] = useState('');
-  const [newFloor, setNewFloor] = useState<number>(1);
-  const [newBedrooms, setNewBedrooms] = useState<number>(2);
-  const [newBathrooms, setNewBathrooms] = useState<number>(2);
-  const [newSquareFeet, setNewSquareFeet] = useState<number>(1150);
-  const [newRentAmount, setNewRentAmount] = useState<number>(48000);
-  const [newDepositAmount, setNewDepositAmount] = useState<number>(48000);
-  const [newStatus, setNewStatus] = useState<Unit['status']>('vacant');
-
   const filteredUnits = units.filter((u) => {
+    const matchesProperty =
+      selectedPropertyId === 'all' || u.propertyId === selectedPropertyId;
+
     const matchesSearch =
       u.unitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.propertyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.currentTenantName && u.currentTenantName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || u.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    return matchesProperty && matchesSearch && matchesStatus;
   });
 
-  const vacantCount = units.filter((u) => u.status === 'vacant').length;
-  const occupiedCount = units.filter((u) => u.status === 'occupied').length;
-  const maintenanceCount = units.filter((u) => u.status === 'maintenance').length;
-
-  const handleInlineUnitSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUnitNumber) return;
-
-    addUnit({
-      unitNumber: newUnitNumber,
-      propertyName: 'Emerald Heights Residences',
-      floor: newFloor,
-      bedrooms: newBedrooms,
-      bathrooms: newBathrooms,
-      squareFeet: newSquareFeet,
-      rentAmount: newRentAmount,
-      depositAmount: newDepositAmount,
-      status: newStatus
-    });
-
-    setNewUnitNumber('');
-    setShowInlineUnitForm(false);
-  };
+  const vacantCount = filteredUnits.filter((u) => u.status === 'vacant').length;
+  const occupiedCount = filteredUnits.filter((u) => u.status === 'occupied').length;
+  const maintenanceCount = filteredUnits.filter((u) => u.status === 'maintenance').length;
 
   const handleAssignTenantToUnit = (unit: Unit) => {
     setPreselectedUnitNumber(unit.unitNumber);
@@ -97,36 +69,57 @@ export const UnitsPage: React.FC = () => {
               Apartment Units Roster
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
-              Manage apartment inventory, track vacant ready-to-lease units, update rental pricing, and assign incoming tenants.
+              Manage apartment inventory, track vacant ready-to-lease units, update rental pricing, and assign incoming tenants across all properties.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => setShowInlineUnitForm(!showInlineUnitForm)}
-              className="px-5 py-3.5 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 font-bold text-xs shadow-sm flex items-center gap-2 transition"
-            >
-              <PlusCircle className="w-4 h-4 text-blue-600" />
-              <span>{showInlineUnitForm ? 'Hide Quick Form' : 'Quick Add Unit'}</span>
-            </button>
+          <button
+            onClick={() => setIsAddUnitModalOpen(true)}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center gap-2 transition transform hover:-translate-y-0.5 self-start md:self-auto"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ Add New Unit</span>
+          </button>
+        </div>
 
-            <button
-              onClick={() => setIsAddUnitModalOpen(true)}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center gap-2 transition transform hover:-translate-y-0.5"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>+ Add Unit (Modal)</span>
-            </button>
-          </div>
+        {/* Property Filter Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <span className="text-xs font-bold text-slate-500 shrink-0">Filter Property:</span>
+          <button
+            onClick={() => setSelectedPropertyId('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
+              selectedPropertyId === 'all'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+            }`}
+          >
+            All Estates ({units.length} Units)
+          </button>
+          {properties.map((p) => {
+            const count = units.filter((u) => u.propertyId === p.id).length;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPropertyId(p.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
+                  selectedPropertyId === p.id
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                }`}
+              >
+                🏢 {p.name} ({count})
+              </button>
+            );
+          })}
         </div>
 
         {/* Executive Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <span className="text-3xl font-display font-extrabold text-slate-900 dark:text-white block">
-              {units.length} Units
+              {filteredUnits.length} Units
             </span>
-            <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Estate Units</span>
+            <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Units</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
@@ -151,140 +144,13 @@ export const UnitsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Inline Add Unit Form */}
-        {showInlineUnitForm && (
-          <div className="bg-white dark:bg-dark-900 border-2 border-blue-400 dark:border-blue-600 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-600 flex items-center justify-center">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Register New Apartment Unit</h3>
-                  <p className="text-xs text-slate-500">Add an apartment to the building inventory</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowInlineUnitForm(false)}
-                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                Close Form ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleInlineUnitSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Unit Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Unit 6B"
-                    value={newUnitNumber}
-                    onChange={(e) => setNewUnitNumber(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Floor Level</label>
-                  <input
-                    type="number"
-                    value={newFloor}
-                    onChange={(e) => setNewFloor(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Bedrooms</label>
-                  <select
-                    value={newBedrooms}
-                    onChange={(e) => setNewBedrooms(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs"
-                  >
-                    <option value={1}>1 Bedroom</option>
-                    <option value={2}>2 Bedrooms</option>
-                    <option value={3}>3 Bedrooms</option>
-                    <option value={4}>4 Bedrooms</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Status</label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as any)}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs uppercase font-bold"
-                  >
-                    <option value="vacant">Vacant</option>
-                    <option value="occupied">Occupied</option>
-                    <option value="maintenance">Maintenance</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Monthly Rent (KES) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={newRentAmount}
-                    onChange={(e) => setNewRentAmount(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Deposit Amount (KES) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={newDepositAmount}
-                    onChange={(e) => setNewDepositAmount(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Approx Sq Feet</label>
-                  <input
-                    type="number"
-                    value={newSquareFeet}
-                    onChange={(e) => setNewSquareFeet(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowInlineUnitForm(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="px-8 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/20"
-                >
-                  Save & Register Unit
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Search and Filters Bar */}
+        {/* Search and Status Filters Bar */}
         <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
             <input
               type="text"
-              placeholder="Search by unit number (e.g. Unit 3C), tenant..."
+              placeholder="Search unit number, estate, tenant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-11 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -294,7 +160,7 @@ export const UnitsPage: React.FC = () => {
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
             <span className="text-xs font-bold text-slate-500 shrink-0">Status:</span>
             {[
-              { id: 'all', label: `All (${units.length})` },
+              { id: 'all', label: `All (${filteredUnits.length})` },
               { id: 'vacant', label: `Vacant (${vacantCount})` },
               { id: 'occupied', label: `Occupied (${occupiedCount})` },
               { id: 'maintenance', label: `Maintenance (${maintenanceCount})` }
@@ -386,7 +252,7 @@ export const UnitsPage: React.FC = () => {
                     className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
-                    <span>Assign Tenant to {u.unitNumber}</span>
+                    <span>Assign Tenant</span>
                   </button>
                 ) : (
                   <button
@@ -404,7 +270,7 @@ export const UnitsPage: React.FC = () => {
                       ? 'bg-amber-500 text-white border-amber-600'
                       : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
-                  title="Toggle maintenance status"
+                  title="Toggle maintenance"
                 >
                   {u.status === 'maintenance' ? 'Exit Maint.' : 'Maint.'}
                 </button>

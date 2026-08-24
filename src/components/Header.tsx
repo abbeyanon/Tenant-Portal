@@ -4,7 +4,6 @@ import { useTenant } from '../context/TenantContext';
 import { useTheme } from '../context/ThemeContext';
 import {
   Home,
-  ShieldCheck,
   CreditCard,
   Wrench,
   KeyRound,
@@ -16,12 +15,12 @@ import {
   FileText,
   Menu,
   X,
-  PlusCircle,
   PhoneCall,
-  UserPlus,
   DollarSign,
   LogIn,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -35,11 +34,7 @@ export const Header: React.FC = () => {
     isAuthenticated,
     currentUser,
     logout,
-    setIsPayRentModalOpen,
-    setIsMaintenanceModalOpen,
-    setIsGatePassModalOpen,
-    setIsAddTenantModalOpen,
-    setIsAddUnitModalOpen
+    setIsPayRentModalOpen
   } = useTenant();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,7 +44,7 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-dark-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      {/* 1. Top Estate Bar & Role Switcher */}
+      {/* 1. Top Estate Bar & Persona Switcher */}
       <div className="bg-slate-900 text-white text-xs py-1.5 px-3 sm:px-6">
         <div className="max-w-[1550px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-4">
@@ -58,13 +53,15 @@ export const Header: React.FC = () => {
               <span>Caretaker & Security Hotline: <strong className="text-white">+254 759 508 348</strong></span>
             </div>
             <span className="hidden md:inline text-slate-600">•</span>
-            <span className="hidden md:inline text-slate-300">Emerald Heights Residences (Ngong Road)</span>
+            <span className="hidden md:inline text-slate-300">
+              {currentRole === 'tenant' ? 'Emerald Heights (Unit 4B)' : 'Multi-Property Management'}
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* 1-Click Role Switcher */}
+            {/* Persona Switcher */}
             <div className="flex items-center gap-1.5 text-slate-400">
-              <span>View Mode:</span>
+              <span className="hidden sm:inline">Role View:</span>
               <div className="flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
                 <button
                   onClick={() => switchRole('tenant')}
@@ -74,7 +71,7 @@ export const Header: React.FC = () => {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Resident Tenant (4B)
+                  Resident Tenant
                 </button>
                 <button
                   onClick={() => switchRole('landlord')}
@@ -84,16 +81,16 @@ export const Header: React.FC = () => {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Property Manager / Landlord
+                  Landlord / Manager
                 </button>
               </div>
             </div>
 
-            {/* Dark / Light Mode Switcher */}
+            {/* Dark / Light Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition"
-              title="Toggle Light / Dark Mode"
+              title="Toggle Theme"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <Moon className="w-3.5 h-3.5 text-blue-400" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
@@ -102,7 +99,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Main Navigation Bar */}
+      {/* 2. Main Navigation Bar (Clean & Context-Aware) */}
       <div className="max-w-[1550px] mx-auto px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -117,125 +114,174 @@ export const Header: React.FC = () => {
                 Tenant<span className="text-brand-600 dark:text-brand-400">Hub</span>
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wider uppercase block">
-                Frappe & ERPNext Connected
+                {currentRole === 'tenant' ? 'Resident Portal' : 'Property & ERPNext Manager'}
               </span>
             </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden xl:flex items-center gap-1">
-            <Link
-              to="/"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Dashboard
-            </Link>
+          {/* Desktop Nav Links (Role-Specific) */}
+          <nav className="hidden lg:flex items-center gap-1.5">
+            {currentRole === 'tenant' ? (
+              // === TENANT NAVIGATION (Simple & Focused) ===
+              <>
+                <Link
+                  to="/"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition ${
+                    isActive('/')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  My Home
+                </Link>
 
-            <Link
-              to="/units"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
-                isActive('/units')
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 font-bold'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span>Units</span>
-            </Link>
+                <Link
+                  to="/payments"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/payments')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  <span>Rent & Bills</span>
+                </Link>
 
-            <Link
-              to="/tenants"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
-                isActive('/tenants')
-                  ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              <Users className="w-4 h-4 text-purple-600" />
-              <span>Tenants</span>
-            </Link>
+                <Link
+                  to="/maintenance"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/maintenance')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <Wrench className="w-4 h-4 text-amber-500" />
+                  <span>Report Issue</span>
+                </Link>
 
-            {/* ERPNext Accounting Link */}
-            <Link
-              to="/accounting"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
-                isActive('/accounting')
-                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 font-bold'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              <DollarSign className="w-4 h-4 text-emerald-600" />
-              <span>ERPNext Accounts</span>
-            </Link>
+                <Link
+                  to="/gate-pass"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/gate-pass')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <KeyRound className="w-4 h-4 text-blue-500" />
+                  <span>Visitor Pass</span>
+                </Link>
 
-            <Link
-              to="/payments"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/payments')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Billing
-            </Link>
+                <Link
+                  to="/documents"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/documents')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 text-slate-400" />
+                  <span>My Lease</span>
+                </Link>
 
-            <Link
-              to="/maintenance"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/maintenance')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Maintenance
-            </Link>
+                <Link
+                  to="/settings"
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition ${
+                    isActive('/settings')
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  My Profile
+                </Link>
+              </>
+            ) : (
+              // === LANDLORD / PROPERTY MANAGER NAVIGATION ===
+              <>
+                <Link
+                  to="/"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
+                    isActive('/')
+                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  Dashboard
+                </Link>
 
-            <Link
-              to="/gate-pass"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/gate-pass')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Gate Pass
-            </Link>
+                <Link
+                  to="/properties"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/properties')
+                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 text-purple-600" />
+                  <span>Properties</span>
+                </Link>
 
-            <Link
-              to="/documents"
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                isActive('/documents')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-850'
-              }`}
-            >
-              Docs
-            </Link>
+                <Link
+                  to="/units"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/units')
+                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <Home className="w-4 h-4 text-blue-600" />
+                  <span>Units</span>
+                </Link>
+
+                <Link
+                  to="/tenants"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/tenants')
+                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-purple-600" />
+                  <span>Tenants</span>
+                </Link>
+
+                <Link
+                  to="/accounting"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
+                    isActive('/accounting')
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <span>ERPNext Accounts</span>
+                </Link>
+
+                <Link
+                  to="/maintenance"
+                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
+                    isActive('/maintenance')
+                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-dark-850'
+                  }`}
+                >
+                  Maintenance
+                </Link>
+              </>
+            )}
           </nav>
 
-          {/* Right Action Icons & Buttons */}
+          {/* Right Action Icons & Auth Profile */}
           <div className="flex items-center gap-2.5">
-            {/* Add Tenant Button */}
-            <button
-              onClick={() => setIsAddTenantModalOpen(true)}
-              className="hidden lg:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>+ Tenant</span>
-            </button>
-
-            {/* Quick Action CTA Button for Rent Payment */}
-            <button
-              onClick={() => setIsPayRentModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
-            >
-              <CreditCard className="w-4 h-4" />
-              <span>Pay Rent (M-Pesa)</span>
-            </button>
+            {/* Instant STK Pay Rent CTA (Only for Resident Tenant) */}
+            {currentRole === 'tenant' && (
+              <button
+                onClick={() => setIsPayRentModalOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition transform hover:-translate-y-0.5"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay Rent (M-Pesa)</span>
+              </button>
+            )}
 
             {/* Notices Bell */}
             <div className="relative">
@@ -253,7 +299,7 @@ export const Header: React.FC = () => {
               {notifDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xl z-50 text-slate-900 dark:text-white">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <span className="font-bold text-sm">Building Notices & Alerts</span>
+                    <span className="font-bold text-sm">Building Notices</span>
                     <button onClick={() => setNotifDropdownOpen(false)} className="text-xs text-brand-600 hover:underline">
                       Close
                     </button>
@@ -273,7 +319,7 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Login / Auth Button or User Mini Card */}
+            {/* Profile & Auth */}
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -287,7 +333,7 @@ export const Header: React.FC = () => {
                       {currentUser.name.charAt(0)}
                     </div>
                   )}
-                  <span className="hidden md:inline">{currentRole === 'tenant' ? 'Unit 4B' : 'Director'}</span>
+                  <span className="hidden md:inline">{currentRole === 'tenant' ? 'Unit 4B' : 'Manager'}</span>
                 </Link>
 
                 <button
@@ -311,7 +357,7 @@ export const Header: React.FC = () => {
             {/* Mobile Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
+              className="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -319,65 +365,67 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Mobile Navigation Drawer */}
+      {/* 3. Mobile Navigation Drawer (Role-Specific) */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
-          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Dashboard
-            </Link>
-            <Link to="/units" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
-              Units List
-            </Link>
-            <Link to="/tenants" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
-              Tenants List
-            </Link>
-            <Link to="/accounting" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
-              ERPNext Accounts
-            </Link>
-            <Link to="/payments" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Rent & Billing
-            </Link>
-            <Link to="/maintenance" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Maintenance
-            </Link>
-            <Link to="/gate-pass" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Visitor Gate Pass
-            </Link>
-            <Link to="/documents" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Lease Documents
-            </Link>
-            <Link to="/settings" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
-              Settings & Profile
-            </Link>
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold">
-              Login Page
-            </Link>
-          </div>
+        <div className="lg:hidden bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top">
+          {currentRole === 'tenant' ? (
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                My Home
+              </Link>
+              <Link to="/payments" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                Rent & Bills
+              </Link>
+              <Link to="/maintenance" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                Report Issue
+              </Link>
+              <Link to="/gate-pass" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                Visitor Pass
+              </Link>
+              <Link to="/documents" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                My Lease
+              </Link>
+              <Link to="/settings" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                My Profile
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                Dashboard
+              </Link>
+              <Link to="/properties" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                Properties
+              </Link>
+              <Link to="/units" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+                Units Roster
+              </Link>
+              <Link to="/tenants" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                Tenants Roster
+              </Link>
+              <Link to="/accounting" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                ERPNext Accounts
+              </Link>
+              <Link to="/maintenance" onClick={() => setMobileMenuOpen(false)} className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 text-slate-800 dark:text-slate-200">
+                Maintenance
+              </Link>
+            </div>
+          )}
 
-          <div className="pt-2 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsAddTenantModalOpen(true);
-              }}
-              className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>+ Onboard New Tenant</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsPayRentModalOpen(true);
-              }}
-              className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-            >
-              <CreditCard className="w-4 h-4" />
-              <span>Pay Rent via M-Pesa</span>
-            </button>
-          </div>
+          {currentRole === 'tenant' && (
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsPayRentModalOpen(true);
+                }}
+                className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay Rent via M-Pesa</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

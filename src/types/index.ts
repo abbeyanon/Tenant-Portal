@@ -1,11 +1,23 @@
 export type UserRole = 'tenant' | 'landlord' | 'manager';
 
+export interface Property {
+  id: string;
+  name: string;
+  location: string;
+  propertyType: 'Apartment Complex' | 'Executive Suites' | 'Commercial' | 'Gated Community';
+  totalUnits: number;
+  caretakerName: string;
+  caretakerPhone: string;
+  image?: string;
+}
+
 export interface UserAccount {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   unitNumber?: string;
+  propertyName?: string;
   avatar?: string;
   token?: string;
 }
@@ -15,9 +27,10 @@ export interface Tenant {
   name: string;
   email: string;
   phone: string;
+  propertyId: string;
+  propertyName: string;
   unitId: string;
   unitNumber: string;
-  propertyName: string;
   rentAmount: number;
   depositAmount: number;
   balanceDue: number;
@@ -36,6 +49,7 @@ export interface Tenant {
 export interface Unit {
   id: string;
   unitNumber: string;
+  propertyId: string;
   propertyName: string;
   floor: number;
   bedrooms: number;
@@ -51,6 +65,8 @@ export interface Unit {
 export interface PaymentRecord {
   id: string;
   receiptNumber: string;
+  propertyId?: string;
+  propertyName?: string;
   unitNumber: string;
   tenantName: string;
   tenantPhone: string;
@@ -61,11 +77,14 @@ export interface PaymentRecord {
   invoiceMonth: string;
   status: 'completed' | 'pending' | 'failed';
   date: string;
+  mpesaPhone?: string;
 }
 
 export interface MaintenanceTicket {
   id: string;
   ticketNumber: string;
+  propertyId?: string;
+  propertyName?: string;
   unitNumber: string;
   tenantName: string;
   tenantPhone: string;
@@ -90,6 +109,7 @@ export interface Announcement {
   date: string;
   author: string;
   isUrgent: boolean;
+  propertyName?: string;
 }
 
 export interface GatePass {
@@ -121,15 +141,13 @@ export interface PropertyStats {
   activeMaintenanceTickets: number;
 }
 
-// =========================================================================
-// ERPNEXT ACCOUNTING MODULE TYPES
-// =========================================================================
-
+// ERPNext Accounts
 export interface SalesInvoice {
   id: string;
   invoiceNumber: string;
   customerName: string;
   unitNumber: string;
+  propertyName?: string;
   grandTotal: number;
   outstandingAmount: number;
   status: 'Paid' | 'Unpaid' | 'Overdue';
@@ -144,6 +162,7 @@ export interface PaymentEntry {
   voucherNumber: string;
   partyName: string;
   unitNumber: string;
+  propertyName?: string;
   paidAmount: number;
   modeOfPayment: 'M-Pesa' | 'Card' | 'Bank Transfer' | 'Cash';
   paidToAccount: string;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserRole,
   UserAccount,
+  Property,
   Tenant,
   Unit,
   PaymentRecord,
@@ -15,6 +16,7 @@ import {
   GLEntry
 } from '../types';
 import {
+  initialProperties,
   initialTenants,
   initialUnits,
   initialPayments,
@@ -36,14 +38,21 @@ interface Toast {
 }
 
 interface TenantContextType {
-  // Auth
+  // Auth & Roles
   isAuthenticated: boolean;
   currentUser: UserAccount;
   login: (email: string, password?: string) => Promise<boolean>;
   logout: () => void;
-
   currentRole: UserRole;
   switchRole: (role: UserRole) => void;
+
+  // Multi-Property Management
+  properties: Property[];
+  selectedPropertyId: string;
+  setSelectedPropertyId: (id: string) => void;
+  addProperty: (prop: Omit<Property, 'id'>) => void;
+
+  // Core Data
   activeTenant: Tenant;
   allTenants: Tenant[];
   units: Unit[];
@@ -55,46 +64,33 @@ interface TenantContextType {
   stats: PropertyStats;
   toasts: Toast[];
 
-  // ERPNext Accounting Module
+  // ERPNext Accounting
   salesInvoices: SalesInvoice[];
   paymentEntries: PaymentEntry[];
   glEntries: GLEntry[];
 
-  addToast: (toast: Omit<Toast, 'id'>) => void;
-  removeToast: (id: string) => void;
-
-  // Payment operations (Creates ERPNext Payment Entry & GL Entry)
-  payRent: (paymentData: {
-    unitNumber: string;
-    tenantName: string;
-    tenantPhone: string;
+  // STK Push Simulation Controller
+  isStkModalOpen: boolean;
+  setIsStkModalOpen: (open: boolean) => void;
+  stkPaymentDetails: any | null;
+  triggerMpesaStkPush: (data: {
     amount: number;
+    phone: string;
+    unitNumber: string;
+    propertyName?: string;
+    tenantName: string;
     type: PaymentRecord['type'];
-    method: 'mpesa' | 'card' | 'bank_transfer';
     invoiceMonth: string;
-    mpesaNumber?: string;
-  }) => Promise<{ success: boolean; payment: PaymentRecord; receiptNumber: string }>;
+  }) => void;
+  confirmMpesaPayment: (confirmedDetails: any) => void;
 
-  // Maintenance operations
-  submitMaintenanceTicket: (ticket: Omit<MaintenanceTicket, 'id' | 'ticketNumber' | 'status' | 'reportedDate'>) => void;
-  updateTicketStatus: (ticketId: string, status: MaintenanceTicket['status'], note?: string) => void;
-  assignTicketTechnician: (ticketId: string, technicianName: string, technicianPhone: string) => void;
-
-  // Gate passes
-  createGatePass: (visitorName: string, visitorPhone: string, unitNumber: string) => GatePass;
-
-  // Announcements
-  broadcastAnnouncement: (announcement: Omit<Announcement, 'id' | 'date'>) => void;
-
-  // Tenant operations
-  addTenant: (tenant: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => void;
-  sendPaymentReminder: (tenantId: string) => void;
-
-  // Unit operations
-  addUnit: (unit: Omit<Unit, 'id'>) => void;
-  updateUnitStatus: (unitId: string, status: Unit['status']) => void;
-
-  // Modals controller state
+  // Modals Controller
+  isAddPropertyModalOpen: boolean;
+  setIsAddPropertyModalOpen: (open: boolean) => void;
+  isAddTenantModalOpen: boolean;
+  setIsAddTenantModalOpen: (open: boolean) => void;
+  isAddUnitModalOpen: boolean;
+  setIsAddUnitModalOpen: (open: boolean) => void;
   isPayRentModalOpen: boolean;
   setIsPayRentModalOpen: (open: boolean) => void;
   isMaintenanceModalOpen: boolean;
@@ -103,15 +99,24 @@ interface TenantContextType {
   setIsGatePassModalOpen: (open: boolean) => void;
   isAnnouncementModalOpen: boolean;
   setIsAnnouncementModalOpen: (open: boolean) => void;
-  isAddTenantModalOpen: boolean;
-  setIsAddTenantModalOpen: (open: boolean) => void;
-  isAddUnitModalOpen: boolean;
-  setIsAddUnitModalOpen: (open: boolean) => void;
   preselectedUnitNumber: string | null;
   setPreselectedUnitNumber: (unitNumber: string | null) => void;
   activeReceipt: PaymentRecord | null;
   setActiveReceipt: (receipt: PaymentRecord | null) => void;
 
+  // Operations
+  addToast: (toast: Omit<Toast, 'id'>) => void;
+  removeToast: (id: string) => void;
+  payRent: (paymentData: any) => Promise<any>;
+  submitMaintenanceTicket: (ticket: Omit<MaintenanceTicket, 'id' | 'ticketNumber' | 'status' | 'reportedDate'>) => void;
+  updateTicketStatus: (ticketId: string, status: MaintenanceTicket['status'], note?: string) => void;
+  assignTicketTechnician: (ticketId: string, technicianName: string, technicianPhone: string) => void;
+  createGatePass: (visitorName: string, visitorPhone: string, unitNumber: string) => GatePass;
+  broadcastAnnouncement: (announcement: Omit<Announcement, 'id' | 'date'>) => void;
+  addTenant: (tenant: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => void;
+  sendPaymentReminder: (tenantId: string) => void;
+  addUnit: (unit: Omit<Unit, 'id'>) => void;
+  updateUnitStatus: (unitId: string, status: Unit['status']) => void;
   formatCurrency: (amount: number) => string;
 }
 
@@ -128,6 +133,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         email: 'john.kamau@example.com',
         role: 'tenant',
         unitNumber: 'Unit 4B',
+        propertyName: 'Emerald Heights Luxury Residences',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
       };
     } catch {
@@ -136,7 +142,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: 'John Kamau',
         email: 'john.kamau@example.com',
         role: 'tenant',
-        unitNumber: 'Unit 4B'
+        unitNumber: 'Unit 4B',
+        propertyName: 'Emerald Heights Luxury Residences'
       };
     }
   });
@@ -148,6 +155,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     return (localStorage.getItem('tenanthub_role') as UserRole) || 'tenant';
   });
+
+  // Multi-Property State
+  const [properties, setProperties] = useState<Property[]>(() => {
+    try {
+      const saved = localStorage.getItem('tenanthub_properties');
+      return saved ? JSON.parse(saved) : initialProperties;
+    } catch {
+      return initialProperties;
+    }
+  });
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
 
   const [allTenants, setAllTenants] = useState<Tenant[]>(() => {
     try {
@@ -236,24 +255,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Modals state
+  const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+  const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
+  const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [isPayRentModalOpen, setIsPayRentModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [isGatePassModalOpen, setIsGatePassModalOpen] = useState(false);
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
-  const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
-  const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [preselectedUnitNumber, setPreselectedUnitNumber] = useState<string | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<PaymentRecord | null>(null);
+
+  // STK Push State
+  const [isStkModalOpen, setIsStkModalOpen] = useState(false);
+  const [stkPaymentDetails, setStkPaymentDetails] = useState<any | null>(null);
 
   const activeTenant = allTenants[0];
 
   useEffect(() => {
-    localStorage.setItem('tenanthub_user', JSON.stringify(currentUser));
-    localStorage.setItem('tenanthub_auth', isAuthenticated ? 'true' : 'false');
-    localStorage.setItem('tenanthub_role', currentRole);
-  }, [currentUser, isAuthenticated, currentRole]);
-
-  useEffect(() => {
+    localStorage.setItem('tenanthub_properties', JSON.stringify(properties));
     localStorage.setItem('tenanthub_tenants', JSON.stringify(allTenants));
     localStorage.setItem('tenanthub_units', JSON.stringify(units));
     localStorage.setItem('tenanthub_payments', JSON.stringify(payments));
@@ -261,7 +280,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem('tenanthub_sinv', JSON.stringify(salesInvoices));
     localStorage.setItem('tenanthub_pe', JSON.stringify(paymentEntries));
     localStorage.setItem('tenanthub_gl', JSON.stringify(glEntries));
-  }, [allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries]);
+  }, [properties, allTenants, units, payments, maintenanceTickets, salesInvoices, paymentEntries, glEntries]);
 
   // Auth Methods
   const login = async (email: string, password?: string): Promise<boolean> => {
@@ -282,6 +301,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         email,
         role: 'tenant',
         unitNumber: 'Unit 4B',
+        propertyName: 'Emerald Heights Luxury Residences',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop'
       };
       setCurrentUser(tenantUser);
@@ -302,7 +322,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'info',
       title: 'Signed Out',
-      message: 'You have been logged out of the tenant portal.'
+      message: 'You have been logged out of the portal.'
     });
   };
 
@@ -316,7 +336,22 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'info',
       title: 'Workspace Switched',
-      message: `Now viewing workspace as ${role === 'tenant' ? 'Resident Tenant' : 'Property Manager / Landlord'}.`
+      message: `Switched view to ${role === 'tenant' ? 'Resident Tenant' : 'Property Manager / Landlord'}.`
+    });
+  };
+
+  // Add Property
+  const addProperty = (propData: Omit<Property, 'id'>) => {
+    const newProp: Property = {
+      ...propData,
+      id: 'prop-' + Date.now()
+    };
+    setProperties((prev) => [...prev, newProp]);
+
+    addToast({
+      type: 'success',
+      title: 'Property Registered 🏢',
+      message: `${newProp.name} (${newProp.location}) added to your portfolio.`
     });
   };
 
@@ -336,33 +371,46 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return `KES ${amount.toLocaleString()}`;
   };
 
-  // Payment Processing Simulation (With ERPNext Accounts Integration)
-  const payRent = async (data: {
-    unitNumber: string;
-    tenantName: string;
-    tenantPhone: string;
+  // M-Pesa STK Push Trigger
+  const triggerMpesaStkPush = (data: {
     amount: number;
+    phone: string;
+    unitNumber: string;
+    propertyName?: string;
+    tenantName: string;
     type: PaymentRecord['type'];
-    method: 'mpesa' | 'card' | 'bank_transfer';
     invoiceMonth: string;
-    mpesaNumber?: string;
   }) => {
+    setStkPaymentDetails(data);
+    setIsStkModalOpen(true);
+    setIsPayRentModalOpen(false);
+
+    addToast({
+      type: 'info',
+      title: 'STK Push Dispatched 📲',
+      message: `Prompt sent to ${data.phone}. Please authorize with your 4-digit PIN.`
+    });
+  };
+
+  // M-Pesa STK Push Confirmation & Reconciliation
+  const confirmMpesaPayment = (confirmedDetails: any) => {
+    if (!stkPaymentDetails) return;
+
     const receiptNumber = `TH-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const txRef = data.method === 'mpesa'
-      ? `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-      : `CRD_${Date.now()}`;
+    const txRef = confirmedDetails.transactionRef || `QK${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const newPayment: PaymentRecord = {
       id: 'pay-' + Date.now(),
       receiptNumber,
-      unitNumber: data.unitNumber,
-      tenantName: data.tenantName,
-      tenantPhone: data.tenantPhone,
-      amount: data.amount,
-      type: data.type,
-      method: data.method,
+      propertyName: stkPaymentDetails.propertyName || 'Emerald Heights Luxury Residences',
+      unitNumber: stkPaymentDetails.unitNumber,
+      tenantName: stkPaymentDetails.tenantName,
+      tenantPhone: stkPaymentDetails.phone,
+      amount: stkPaymentDetails.amount,
+      type: stkPaymentDetails.type,
+      method: 'mpesa',
       transactionRef: txRef,
-      invoiceMonth: data.invoiceMonth,
+      invoiceMonth: stkPaymentDetails.invoiceMonth,
       status: 'completed',
       date: new Date().toISOString().replace('T', ' ').substring(0, 19)
     };
@@ -373,24 +421,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const newPE: PaymentEntry = {
       id: 'pe-' + Date.now(),
       voucherNumber: `ACC-PAY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      partyName: data.tenantName,
-      unitNumber: data.unitNumber,
-      paidAmount: data.amount,
-      modeOfPayment: data.method === 'mpesa' ? 'M-Pesa' : data.method === 'card' ? 'Card' : 'Bank Transfer',
+      partyName: stkPaymentDetails.tenantName,
+      unitNumber: stkPaymentDetails.unitNumber,
+      propertyName: stkPaymentDetails.propertyName || 'Emerald Heights Luxury Residences',
+      paidAmount: stkPaymentDetails.amount,
+      modeOfPayment: 'M-Pesa',
       paidToAccount: '1120 - Safaricom M-Pesa Till Account',
       referenceNo: txRef,
       postingDate: new Date().toISOString().split('T')[0],
-      remarks: `${data.invoiceMonth} ${data.type.toUpperCase()} settlement for ${data.unitNumber}`
+      remarks: `${stkPaymentDetails.invoiceMonth} ${stkPaymentDetails.type.toUpperCase()} settlement for ${stkPaymentDetails.unitNumber}`
     };
     setPaymentEntries((prev) => [newPE, ...prev]);
 
-    // 2. Post dual General Ledger (GL) Entries in ERPNext Accounts
+    // 2. Post dual GL Entries
     const glDebit: GLEntry = {
       id: 'gl-' + Date.now() + '-dr',
       voucherType: 'Payment Entry',
       voucherNo: newPE.voucherNumber,
       account: '1120 - Safaricom M-Pesa Till Account',
-      debit: data.amount,
+      debit: stkPaymentDetails.amount,
       credit: 0,
       postingDate: new Date().toISOString().split('T')[0],
       remarks: `M-Pesa payment received Ref: ${txRef}`
@@ -400,19 +449,19 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: 'gl-' + Date.now() + '-cr',
       voucherType: 'Payment Entry',
       voucherNo: newPE.voucherNumber,
-      account: `1310 - Debtors / Accounts Receivable (${data.tenantName})`,
+      account: `1310 - Debtors / Accounts Receivable (${stkPaymentDetails.tenantName})`,
       debit: 0,
-      credit: data.amount,
+      credit: stkPaymentDetails.amount,
       postingDate: new Date().toISOString().split('T')[0],
-      remarks: `Accounts Receivable settlement against ${data.unitNumber}`
+      remarks: `Settlement against ${stkPaymentDetails.unitNumber}`
     };
     setGlEntries((prev) => [glDebit, glCredit, ...prev]);
 
-    // 3. Mark corresponding ERPNext Sales Invoice as Paid
+    // 3. Mark matching ERPNext Sales Invoice as Paid
     setSalesInvoices((prev) =>
       prev.map((inv) =>
-        inv.unitNumber === data.unitNumber
-          ? { ...inv, status: 'Paid', outstandingAmount: Math.max(0, inv.outstandingAmount - data.amount) }
+        inv.unitNumber === stkPaymentDetails.unitNumber
+          ? { ...inv, status: 'Paid', outstandingAmount: Math.max(0, inv.outstandingAmount - stkPaymentDetails.amount) }
           : inv
       )
     );
@@ -420,8 +469,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // 4. Update tenant balance
     setAllTenants((prev) =>
       prev.map((t) => {
-        if (t.unitNumber === data.unitNumber) {
-          const newBal = Math.max(0, t.balanceDue - data.amount);
+        if (t.unitNumber === stkPaymentDetails.unitNumber) {
+          const newBal = Math.max(0, t.balanceDue - stkPaymentDetails.amount);
           return {
             ...t,
             balanceDue: newBal,
@@ -432,20 +481,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
 
-    // Update property stats
+    // Update stats
     setStats((prev) => ({
       ...prev,
-      totalCollectedThisMonth: prev.totalCollectedThisMonth + data.amount,
-      totalPendingArrears: Math.max(0, prev.totalPendingArrears - data.amount)
+      totalCollectedThisMonth: prev.totalCollectedThisMonth + stkPaymentDetails.amount,
+      totalPendingArrears: Math.max(0, prev.totalPendingArrears - stkPaymentDetails.amount)
     }));
+
+    setIsStkModalOpen(false);
+    setActiveReceipt(newPayment);
 
     addToast({
       type: 'success',
-      title: 'Payment Reconciled in ERPNext 🧾',
-      message: `${formatCurrency(data.amount)} posted to ERPNext Accounts. Receipt #${receiptNumber} generated.`
+      title: 'M-Pesa Payment Reconciled 🧾',
+      message: `${formatCurrency(stkPaymentDetails.amount)} received via M-Pesa. Receipt #${receiptNumber} generated.`
     });
+  };
 
-    return { success: true, payment: newPayment, receiptNumber };
+  const payRent = async (data: any) => {
+    return triggerMpesaStkPush(data);
   };
 
   // Maintenance Management
@@ -471,8 +525,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     addToast({
       type: 'success',
-      title: 'Maintenance Request Logged',
-      message: `Ticket #${ticketNo} created in Frappe. Property manager has been notified.`
+      title: 'Maintenance Issue Logged 🛠️',
+      message: `Ticket #${ticketNo} logged. Property manager and technician have been notified.`
     });
   };
 
@@ -566,11 +620,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'success',
       title: 'Announcement Broadcasted 📢',
-      message: `Notice "${newAnn.title}" sent to all resident tenants.`
+      message: `Notice "${newAnn.title}" broadcasted to residents.`
     });
   };
 
-  // Tenant Operations (With ERPNext Customer & Sales Invoice Generation)
+  // Tenant Operations (With Property Linking)
   const addTenant = (tenantData: Omit<Tenant, 'id' | 'balanceDue' | 'paymentStatus'>) => {
     const newTenant: Tenant = {
       ...tenantData,
@@ -581,19 +635,20 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setAllTenants((prev) => [newTenant, ...prev]);
 
-    // Create automatic ERPNext Sales Invoice for the new tenant
+    // Create automatic ERPNext Sales Invoice
     const newInvoice: SalesInvoice = {
       id: 'sinv-' + Date.now(),
       invoiceNumber: `ACC-SINV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       customerName: newTenant.name,
       unitNumber: newTenant.unitNumber,
+      propertyName: newTenant.propertyName,
       grandTotal: newTenant.rentAmount,
       outstandingAmount: 0,
       status: 'Paid',
       postingDate: new Date().toISOString().split('T')[0],
       dueDate: new Date().toISOString().split('T')[0],
-      incomeAccount: '4110 - Rental Income - Emerald Heights',
-      costCenter: 'Emerald Heights - Operations'
+      incomeAccount: '4110 - Rental Income',
+      costCenter: 'Operations'
     };
     setSalesInvoices((prev) => [newInvoice, ...prev]);
 
@@ -605,6 +660,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           u.unitNumber === tenantData.unitNumber
             ? {
                 ...u,
+                propertyId: newTenant.propertyId,
+                propertyName: newTenant.propertyName,
                 status: 'occupied',
                 currentTenantId: newTenant.id,
                 currentTenantName: newTenant.name,
@@ -617,7 +674,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const newUnit: Unit = {
           id: 'u-' + Date.now(),
           unitNumber: tenantData.unitNumber,
-          propertyName: tenantData.propertyName || 'Emerald Heights Residences',
+          propertyId: newTenant.propertyId,
+          propertyName: newTenant.propertyName,
           floor: 1,
           bedrooms: 2,
           bathrooms: 2,
@@ -632,20 +690,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     });
 
-    // Update stats
-    setStats((prev) => {
-      const occupied = prev.occupiedUnits + 1;
-      return {
-        ...prev,
-        occupiedUnits: occupied,
-        occupancyRate: Math.round((occupied / Math.max(occupied, prev.totalUnits)) * 100)
-      };
-    });
-
     addToast({
       type: 'success',
       title: 'Tenant Registered in ERPNext',
-      message: `${newTenant.name} registered and Customer & Sales Invoice created in ERPNext Accounts.`
+      message: `${newTenant.name} registered to ${newTenant.propertyName} (${newTenant.unitNumber}).`
     });
   };
 
@@ -656,11 +704,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast({
       type: 'info',
       title: 'Rent Reminder Dispatched 📱',
-      message: `SMS & In-App reminder sent to ${t.name} (${t.phone}) for ${formatCurrency(t.balanceDue || t.rentAmount)}.`
+      message: `SMS reminder sent to ${t.name} (${t.phone}) for ${formatCurrency(t.balanceDue || t.rentAmount)}.`
     });
   };
 
-  // Unit Operations
+  // Unit Operations (With Property Linking)
   const addUnit = (unitData: Omit<Unit, 'id'>) => {
     const newUnit: Unit = {
       ...unitData,
@@ -669,21 +717,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setUnits((prev) => [newUnit, ...prev]);
 
-    setStats((prev) => {
-      const total = prev.totalUnits + 1;
-      const occupied = unitData.status === 'occupied' ? prev.occupiedUnits + 1 : prev.occupiedUnits;
-      return {
-        ...prev,
-        totalUnits: total,
-        occupiedUnits: occupied,
-        occupancyRate: Math.round((occupied / total) * 100)
-      };
-    });
-
     addToast({
       type: 'success',
       title: 'Unit Added to Inventory',
-      message: `${newUnit.unitNumber} (${newUnit.bedrooms} Bed) added to estate inventory.`
+      message: `${newUnit.unitNumber} (${newUnit.bedrooms} Bed) added to ${newUnit.propertyName}.`
     });
   };
 
@@ -717,6 +754,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         logout,
         currentRole,
         switchRole,
+        properties,
+        selectedPropertyId,
+        setSelectedPropertyId,
+        addProperty,
         activeTenant,
         allTenants,
         units,
@@ -730,6 +771,29 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         salesInvoices,
         paymentEntries,
         glEntries,
+        isStkModalOpen,
+        setIsStkModalOpen,
+        stkPaymentDetails,
+        triggerMpesaStkPush,
+        confirmMpesaPayment,
+        isAddPropertyModalOpen,
+        setIsAddPropertyModalOpen,
+        isAddTenantModalOpen,
+        setIsAddTenantModalOpen,
+        isAddUnitModalOpen,
+        setIsAddUnitModalOpen,
+        isPayRentModalOpen,
+        setIsPayRentModalOpen,
+        isMaintenanceModalOpen,
+        setIsMaintenanceModalOpen,
+        isGatePassModalOpen,
+        setIsGatePassModalOpen,
+        isAnnouncementModalOpen,
+        setIsAnnouncementModalOpen,
+        preselectedUnitNumber,
+        setPreselectedUnitNumber,
+        activeReceipt,
+        setActiveReceipt,
         addToast,
         removeToast,
         payRent,
@@ -742,22 +806,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         sendPaymentReminder,
         addUnit,
         updateUnitStatus,
-        isPayRentModalOpen,
-        setIsPayRentModalOpen,
-        isMaintenanceModalOpen,
-        setIsMaintenanceModalOpen,
-        isGatePassModalOpen,
-        setIsGatePassModalOpen,
-        isAnnouncementModalOpen,
-        setIsAnnouncementModalOpen,
-        isAddTenantModalOpen,
-        setIsAddTenantModalOpen,
-        isAddUnitModalOpen,
-        setIsAddUnitModalOpen,
-        preselectedUnitNumber,
-        setPreselectedUnitNumber,
-        activeReceipt,
-        setActiveReceipt,
         formatCurrency
       }}
     >

@@ -1,4 +1,5 @@
 import {
+  Property,
   Tenant,
   Unit,
   PaymentRecord,
@@ -6,26 +7,51 @@ import {
   Announcement,
   GatePass,
   PropertyDocument,
-  PropertyStats
+  PropertyStats,
+  SalesInvoice,
+  PaymentEntry,
+  GLEntry
 } from '../types';
+
+export const initialProperties: Property[] = [
+  {
+    id: 'prop-1',
+    name: 'Emerald Heights Luxury Residences',
+    location: 'Ngong Road, Nairobi',
+    propertyType: 'Apartment Complex',
+    totalUnits: 24,
+    caretakerName: 'John Mwangi',
+    caretakerPhone: '+254 759 508 348',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=600&auto=format&fit=crop'
+  },
+  {
+    id: 'prop-2',
+    name: 'Sapphire Palms Executive Suites',
+    location: 'Kilimani, Nairobi',
+    propertyType: 'Executive Suites',
+    totalUnits: 16,
+    caretakerName: 'Dennis Ochieng',
+    caretakerPhone: '+254 722 000 119',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600&auto=format&fit=crop'
+  },
+  {
+    id: 'prop-3',
+    name: 'Oakwood Court Townhouses',
+    location: 'Westlands, Nairobi',
+    propertyType: 'Gated Community',
+    totalUnits: 12,
+    caretakerName: 'Erick Karanja',
+    caretakerPhone: '+254 711 222 333',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=600&auto=format&fit=crop'
+  }
+];
 
 export const initialUnits: Unit[] = [
   {
     id: 'u-1a',
     unitNumber: 'Unit 1A',
-    propertyName: 'Emerald Heights Residences',
-    floor: 1,
-    bedrooms: 1,
-    bathrooms: 1,
-    squareFeet: 720,
-    rentAmount: 38000,
-    depositAmount: 38000,
-    status: 'vacant'
-  },
-  {
-    id: 'u-1b',
-    unitNumber: 'Unit 1B',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 1,
     bedrooms: 1,
     bathrooms: 1,
@@ -37,7 +63,8 @@ export const initialUnits: Unit[] = [
   {
     id: 'u-1c',
     unitNumber: 'Unit 1C',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 1,
     bedrooms: 1,
     bathrooms: 1,
@@ -51,7 +78,8 @@ export const initialUnits: Unit[] = [
   {
     id: 'u-2a',
     unitNumber: 'Unit 2A',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 2,
     bedrooms: 2,
     bathrooms: 2,
@@ -63,33 +91,10 @@ export const initialUnits: Unit[] = [
     currentTenantName: 'Sarah Mutua'
   },
   {
-    id: 'u-2b',
-    unitNumber: 'Unit 2B',
-    propertyName: 'Emerald Heights Residences',
-    floor: 2,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1150,
-    rentAmount: 48000,
-    depositAmount: 48000,
-    status: 'vacant'
-  },
-  {
-    id: 'u-3a',
-    unitNumber: 'Unit 3A',
-    propertyName: 'Emerald Heights Residences',
-    floor: 3,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1200,
-    rentAmount: 50000,
-    depositAmount: 50000,
-    status: 'vacant'
-  },
-  {
     id: 'u-3c',
     unitNumber: 'Unit 3C',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 3,
     bedrooms: 3,
     bathrooms: 3,
@@ -99,21 +104,10 @@ export const initialUnits: Unit[] = [
     status: 'vacant'
   },
   {
-    id: 'u-4a',
-    unitNumber: 'Unit 4A',
-    propertyName: 'Emerald Heights Residences',
-    floor: 4,
-    bedrooms: 2,
-    bathrooms: 2,
-    squareFeet: 1150,
-    rentAmount: 48000,
-    depositAmount: 48000,
-    status: 'vacant'
-  },
-  {
     id: 'u-4b',
     unitNumber: 'Unit 4B',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 4,
     bedrooms: 2,
     bathrooms: 2,
@@ -127,7 +121,8 @@ export const initialUnits: Unit[] = [
   {
     id: 'u-5a',
     unitNumber: 'Unit 5A (Penthouse)',
-    propertyName: 'Emerald Heights Residences',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     floor: 5,
     bedrooms: 3,
     bathrooms: 3,
@@ -135,6 +130,47 @@ export const initialUnits: Unit[] = [
     rentAmount: 85000,
     depositAmount: 85000,
     status: 'maintenance'
+  },
+  // Sapphire Palms Units
+  {
+    id: 'u-sp-101',
+    unitNumber: 'Suite 101',
+    propertyId: 'prop-2',
+    propertyName: 'Sapphire Palms Executive Suites',
+    floor: 1,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 850,
+    rentAmount: 55000,
+    depositAmount: 55000,
+    status: 'vacant'
+  },
+  {
+    id: 'u-sp-202',
+    unitNumber: 'Suite 202',
+    propertyId: 'prop-2',
+    propertyName: 'Sapphire Palms Executive Suites',
+    floor: 2,
+    bedrooms: 2,
+    bathrooms: 2,
+    squareFeet: 1300,
+    rentAmount: 75000,
+    depositAmount: 75000,
+    status: 'vacant'
+  },
+  // Oakwood Court Units
+  {
+    id: 'u-ow-01',
+    unitNumber: 'Villa 01',
+    propertyId: 'prop-3',
+    propertyName: 'Oakwood Court Townhouses',
+    floor: 1,
+    bedrooms: 4,
+    bathrooms: 4,
+    squareFeet: 2800,
+    rentAmount: 140000,
+    depositAmount: 140000,
+    status: 'vacant'
   }
 ];
 
@@ -144,9 +180,10 @@ export const initialTenants: Tenant[] = [
     name: 'John Kamau',
     email: 'john.kamau@example.com',
     phone: '+254 712 345 678',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitId: 'u-4b',
     unitNumber: 'Unit 4B',
-    propertyName: 'Emerald Heights Luxury Residences',
     rentAmount: 48000,
     depositAmount: 48000,
     balanceDue: 0,
@@ -166,9 +203,10 @@ export const initialTenants: Tenant[] = [
     name: 'Sarah Mutua',
     email: 'sarah.mutua@example.com',
     phone: '+254 723 456 789',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitId: 'u-2a',
     unitNumber: 'Unit 2A',
-    propertyName: 'Emerald Heights Luxury Residences',
     rentAmount: 48000,
     depositAmount: 48000,
     balanceDue: 48000,
@@ -188,9 +226,10 @@ export const initialTenants: Tenant[] = [
     name: 'David Omondi',
     email: 'david.omondi@example.com',
     phone: '+254 734 567 890',
+    propertyId: 'prop-1',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitId: 'u-1c',
     unitNumber: 'Unit 1C',
-    propertyName: 'Emerald Heights Luxury Residences',
     rentAmount: 38000,
     depositAmount: 38000,
     balanceDue: 76000,
@@ -211,6 +250,7 @@ export const initialPayments: PaymentRecord[] = [
   {
     id: 'pay-001',
     receiptNumber: 'TH-REC-2026-0812',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitNumber: 'Unit 4B',
     tenantName: 'John Kamau',
     tenantPhone: '+254 712 345 678',
@@ -225,6 +265,7 @@ export const initialPayments: PaymentRecord[] = [
   {
     id: 'pay-002',
     receiptNumber: 'TH-REC-2026-0813',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitNumber: 'Unit 4B',
     tenantName: 'John Kamau',
     tenantPhone: '+254 712 345 678',
@@ -235,20 +276,6 @@ export const initialPayments: PaymentRecord[] = [
     invoiceMonth: 'August 2026',
     status: 'completed',
     date: '2026-08-05 14:10:00'
-  },
-  {
-    id: 'pay-003',
-    receiptNumber: 'TH-REC-2026-0701',
-    unitNumber: 'Unit 2A',
-    tenantName: 'Sarah Mutua',
-    tenantPhone: '+254 723 456 789',
-    amount: 48000,
-    type: 'rent',
-    method: 'card',
-    transactionRef: 'CRD_991204128',
-    invoiceMonth: 'July 2026',
-    status: 'completed',
-    date: '2026-07-03 09:30:12'
   }
 ];
 
@@ -256,6 +283,7 @@ export const initialMaintenanceTickets: MaintenanceTicket[] = [
   {
     id: 'tk-101',
     ticketNumber: 'MT-2026-042',
+    propertyName: 'Emerald Heights Luxury Residences',
     unitNumber: 'Unit 4B',
     tenantName: 'John Kamau',
     tenantPhone: '+254 712 345 678',
@@ -268,40 +296,6 @@ export const initialMaintenanceTickets: MaintenanceTicket[] = [
     technicianPhone: '+254 722 445 566',
     reportedDate: '2026-08-20',
     notes: ['Technician inspected seals on Aug 21. Replacement ceramic cartridge ordered.']
-  },
-  {
-    id: 'tk-102',
-    ticketNumber: 'MT-2026-044',
-    unitNumber: 'Unit 2A',
-    tenantName: 'Sarah Mutua',
-    tenantPhone: '+254 723 456 789',
-    category: 'electrical',
-    title: 'Kitchen Circuit Breaker Tripping on Microwave Use',
-    description: 'Whenever both the microwave and kettle are on, the 20A kitchen breaker trips.',
-    priority: 'high',
-    status: 'assigned',
-    assignedTechnician: 'Dennis Ochieng (Electrician)',
-    technicianPhone: '+254 733 112 244',
-    reportedDate: '2026-08-22',
-    notes: ['Scheduled electrical load audit for Monday morning.']
-  },
-  {
-    id: 'tk-103',
-    ticketNumber: 'MT-2026-039',
-    unitNumber: 'Unit 1C',
-    tenantName: 'David Omondi',
-    tenantPhone: '+254 734 567 890',
-    category: 'carpentry',
-    title: 'Balcony Sliding Door Track Jammed',
-    description: 'Sliding aluminum door roller wheel popped off track.',
-    priority: 'low',
-    status: 'resolved',
-    assignedTechnician: 'Erick Karanja (Technician)',
-    technicianPhone: '+254 700 889 900',
-    reportedDate: '2026-08-10',
-    resolvedDate: '2026-08-12',
-    cost: 2500,
-    notes: ['Replaced nylon rollers and lubricated track. Tenant signed sign-off form.']
   }
 ];
 
@@ -309,29 +303,12 @@ export const initialAnnouncements: Announcement[] = [
   {
     id: 'ann-1',
     title: 'Routine Water Tank Cleaning & Pressure Testing',
-    content: 'Nairobi Water supply to overhead tanks will undergo annual disinfection on Saturday, Aug 29 from 9:00 AM to 2:00 PM. Please store adequate drinking water.',
+    content: 'Nairobi Water supply to overhead tanks will undergo annual disinfection on Saturday, Aug 29 from 9:00 AM to 2:00 PM.',
     category: 'utility',
     date: '2026-08-22',
     author: 'Estate Management',
-    isUrgent: true
-  },
-  {
-    id: 'ann-2',
-    title: 'Solar Backup Inverter Upgrades Completed',
-    content: 'All corridor lights, security perimeter fences, and borehole pumps are now wired to the 30kVA solar hybrid system ensuring 100% uptime during national grid power blackouts.',
-    category: 'maintenance',
-    date: '2026-08-18',
-    author: 'Caretaker Office',
-    isUrgent: false
-  },
-  {
-    id: 'ann-3',
-    title: 'Garbage Collection Schedule Reminder',
-    content: 'Refuse collection occurs every Tuesday and Friday morning at 7:30 AM. Kindly place securely tied bin bags in the ground-floor refuse chutes.',
-    category: 'general',
-    date: '2026-08-15',
-    author: 'Property Manager',
-    isUrgent: false
+    isUrgent: true,
+    propertyName: 'Emerald Heights Luxury Residences'
   }
 ];
 
@@ -359,38 +336,30 @@ export const initialDocuments: PropertyDocument[] = [
   },
   {
     id: 'doc-2',
-    title: 'Emerald Heights Resident Bylaws & Estate Rules',
+    title: 'Resident Bylaws & Estate House Rules',
     category: 'house_rules',
     unitNumber: 'Unit 4B',
     fileSize: '450 KB (PDF)',
     uploadedDate: '2025-11-01'
-  },
-  {
-    id: 'doc-3',
-    title: 'Move-in Fixture Inspection & Inventory Checklist',
-    category: 'condition_report',
-    unitNumber: 'Unit 4B',
-    fileSize: '820 KB (PDF)',
-    uploadedDate: '2025-11-02'
   }
 ];
 
 export const initialStats: PropertyStats = {
-  totalUnits: 24,
-  occupiedUnits: 22,
-  occupancyRate: 91.7,
-  totalCollectedThisMonth: 1152000,
-  totalPendingArrears: 96000,
+  totalUnits: 52,
+  occupiedUnits: 46,
+  occupancyRate: 88.5,
+  totalCollectedThisMonth: 1980000,
+  totalPendingArrears: 124000,
   activeMaintenanceTickets: 3
 };
 
-// ERPNext Accounting Seed Records
 export const initialSalesInvoices: SalesInvoice[] = [
   {
     id: 'sinv-001',
     invoiceNumber: 'ACC-SINV-2026-0801',
     customerName: 'John Kamau',
     unitNumber: 'Unit 4B',
+    propertyName: 'Emerald Heights Luxury Residences',
     grandTotal: 48000,
     outstandingAmount: 0,
     status: 'Paid',
@@ -404,22 +373,10 @@ export const initialSalesInvoices: SalesInvoice[] = [
     invoiceNumber: 'ACC-SINV-2026-0802',
     customerName: 'Sarah Mutua',
     unitNumber: 'Unit 2A',
+    propertyName: 'Emerald Heights Luxury Residences',
     grandTotal: 48000,
     outstandingAmount: 48000,
     status: 'Unpaid',
-    postingDate: '2026-08-01',
-    dueDate: '2026-08-05',
-    incomeAccount: '4110 - Rental Income - Emerald Heights',
-    costCenter: 'Emerald Heights - Operations'
-  },
-  {
-    id: 'sinv-003',
-    invoiceNumber: 'ACC-SINV-2026-0803',
-    customerName: 'David Omondi',
-    unitNumber: 'Unit 1C',
-    grandTotal: 38000,
-    outstandingAmount: 76000,
-    status: 'Overdue',
     postingDate: '2026-08-01',
     dueDate: '2026-08-05',
     incomeAccount: '4110 - Rental Income - Emerald Heights',
@@ -433,24 +390,13 @@ export const initialPaymentEntries: PaymentEntry[] = [
     voucherNumber: 'ACC-PAY-2026-0089',
     partyName: 'John Kamau',
     unitNumber: 'Unit 4B',
+    propertyName: 'Emerald Heights Luxury Residences',
     paidAmount: 48000,
     modeOfPayment: 'M-Pesa',
     paidToAccount: '1120 - Safaricom M-Pesa Till Account',
     referenceNo: 'QKD8921KL9',
     postingDate: '2026-08-04',
     remarks: 'August 2026 Rent Settlement for Unit 4B'
-  },
-  {
-    id: 'pe-002',
-    voucherNumber: 'ACC-PAY-2026-0090',
-    partyName: 'John Kamau',
-    unitNumber: 'Unit 4B',
-    paidAmount: 3200,
-    modeOfPayment: 'M-Pesa',
-    paidToAccount: '1120 - Safaricom M-Pesa Till Account',
-    referenceNo: 'QKX4410LM2',
-    postingDate: '2026-08-05',
-    remarks: 'Water Utility meter settlement for Unit 4B'
   }
 ];
 
@@ -484,15 +430,5 @@ export const initialGLEntries: GLEntry[] = [
     credit: 0,
     postingDate: '2026-08-04',
     remarks: 'M-Pesa rent receipt QKD8921KL9'
-  },
-  {
-    id: 'gl-004',
-    voucherType: 'Payment Entry',
-    voucherNo: 'ACC-PAY-2026-0089',
-    account: '1310 - Debtors / Accounts Receivable (John Kamau)',
-    debit: 0,
-    credit: 48000,
-    postingDate: '2026-08-04',
-    remarks: 'Debtor settlement against ACC-SINV-2026-0801'
   }
 ];
