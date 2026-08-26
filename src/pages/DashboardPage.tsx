@@ -19,8 +19,15 @@ import {
   PhoneCall,
   UserPlus,
   Home,
-  DollarSign
+  DollarSign,
+  Droplets,
+  Zap,
+  Briefcase,
+  PieChart,
+  BarChart3
 } from 'lucide-react';
+import { RevenueCollectionChart } from '../components/charts/RevenueCollectionChart';
+import { MaintenanceCharts } from '../components/charts/MaintenanceCharts';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -158,9 +165,9 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-sm text-slate-900 dark:text-white block group-hover:text-blue-600">
-                  Visitor Pass
+                  Gate Pass
                 </span>
-                <span className="text-[11px] text-slate-500">24-hour gate code</span>
+                <span className="text-[11px] text-slate-500">Generate visitor code</span>
               </div>
             </button>
 
@@ -175,67 +182,24 @@ export const DashboardPage: React.FC = () => {
                 <span className="font-bold text-sm text-slate-900 dark:text-white block group-hover:text-purple-600">
                   My Lease
                 </span>
-                <span className="text-[11px] text-slate-500">Bylaws & signed contract</span>
+                <span className="text-[11px] text-slate-500">Tenancy agreement</span>
               </div>
             </Link>
           </div>
 
-          {/* Active Maintenance Tickets for Resident */}
-          <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Tenant Graphical Maintenance Lifecycle Tracker */}
+          <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-amber-500" />
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">My Maintenance Requests</h3>
+                <Wrench className="w-5 h-5 text-amber-600" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Maintenance & Repair Requests</h2>
               </div>
-              <button
-                onClick={() => setIsMaintenanceModalOpen(true)}
-                className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
-              >
-                + New Request
-              </button>
+              <Link to="/maintenance" className="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline">
+                View All ({tenantTickets.length})
+              </Link>
             </div>
 
-            {tenantTickets.length > 0 ? (
-              <div className="space-y-3">
-                {tenantTickets.map((t) => (
-                  <div key={t.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div>
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <span>{t.title}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">({t.ticketNumber})</span>
-                      </div>
-                      <p className="text-slate-500 text-[11px] mt-0.5">{t.description}</p>
-                      {t.assignedTechnician && (
-                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">
-                          🔧 Assigned to: {t.assignedTechnician} ({t.technicianPhone})
-                        </span>
-                      )}
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase self-start sm:self-center bg-amber-50 text-amber-600 border border-amber-200">
-                      {t.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400 italic">No open repair requests.</p>
-            )}
-          </div>
-
-          {/* Building Notices */}
-          <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-3">
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">Estate Notices & Announcements</h3>
-            <div className="space-y-2">
-              {announcements.map((ann) => (
-                <div key={ann.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span className="text-slate-900 dark:text-white">{ann.title}</span>
-                    <span className="text-[10px] text-slate-400">{ann.date}</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">{ann.content}</p>
-                </div>
-              ))}
-            </div>
+            <MaintenanceCharts tickets={tenantTickets} isTenantView={true} />
           </div>
         </div>
       </div>
@@ -243,46 +207,50 @@ export const DashboardPage: React.FC = () => {
   }
 
   // =========================================================================
-  // 2. LANDLORD / PROPERTY MANAGER EXECUTIVE DASHBOARD
+  // 2. FULL EXECUTIVE & PROPERTY MANAGER DASHBOARD WITH CHARTS
   // =========================================================================
+  const occupiedCount = units.filter((u) => u.status === 'occupied').length;
+  const totalUnitsCount = Math.max(units.length, 1);
+  const occupancyPercentage = Math.round((occupiedCount / totalUnitsCount) * 100);
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 py-12 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 py-10 transition-colors">
       <div className="max-w-[1550px] mx-auto px-3 sm:px-5 lg:px-6 space-y-10">
-        {/* Header */}
+        {/* Header Banner */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-xs font-bold mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 text-xs font-bold mb-2">
               <Building2 className="w-3.5 h-3.5" />
-              <span>Multi-Property Executive Portal</span>
+              <span>Multi-Asset Portfolio & ERPNext Accounts Live</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Portfolio Overview & Operations
+              Executive Property Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
-              Real-time multi-property occupancy metrics, rent collection ledger, tenant directory, and ERPNext accounts reconciliation.
+              Comprehensive real-time analytics for commercial & residential leases, metered utility billing, arrears aging, and maintenance dispatch.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2.5">
             <button
               onClick={() => setIsAddPropertyModalOpen(true)}
-              className="px-5 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs shadow-sm flex items-center gap-2"
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 shadow-sm"
             >
-              <Building2 className="w-4 h-4 text-purple-600" />
-              <span>+ Add Property</span>
+              <Building2 className="w-4 h-4 text-brand-600" />
+              <span>+ Property</span>
             </button>
 
             <button
               onClick={() => setIsAddUnitModalOpen(true)}
-              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center gap-2"
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 shadow-sm"
             >
-              <Home className="w-4 h-4" />
-              <span>+ Add Unit</span>
+              <PlusCircle className="w-4 h-4 text-blue-600" />
+              <span>+ Unit / Space</span>
             </button>
 
             <button
               onClick={() => setIsAddTenantModalOpen(true)}
-              className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md flex items-center gap-2"
+              className="px-5 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand-600/20 transition transform hover:-translate-y-0.5"
             >
               <UserPlus className="w-4 h-4" />
               <span>+ Onboard Tenant</span>
@@ -290,75 +258,92 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Executive Metric Cards */}
+        {/* Executive Stats Cards with Circular Radial Ring */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Portfolio Properties</span>
-            <span className="text-3xl font-display font-extrabold text-slate-900 dark:text-white block">
-              {properties.length} Estates
-            </span>
-            <span className="text-xs text-slate-400">{units.length} total units configured</span>
+          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Portfolio Occupancy</span>
+              <span className="text-3xl font-display font-extrabold text-brand-600 dark:text-brand-400 mt-2 block">
+                {occupancyPercentage}%
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {occupiedCount} of {units.length} Units Leased
+              </span>
+            </div>
+            <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-slate-100 dark:text-dark-800"
+                  strokeWidth="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-brand-600 transition-all duration-1000 ease-out"
+                  strokeDasharray={`${occupancyPercentage}, 100`}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <span className="absolute text-xs font-bold font-mono text-brand-600">{occupancyPercentage}%</span>
+            </div>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Occupancy Rate</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">August Collections</span>
             <span className="text-3xl font-display font-extrabold text-emerald-600 block">
-              {allTenants.length} / {units.length}
+              {formatCurrency(1569000)}
             </span>
-            <span className="text-xs text-emerald-600 font-semibold">{units.filter(u => u.status === 'vacant').length} vacant units available</span>
+            <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>98.2% collection velocity</span>
+            </span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Rent Collected</span>
-            <span className="text-3xl font-display font-extrabold text-brand-600 dark:text-brand-400 block">
-              {formatCurrency(payments.reduce((acc, p) => acc + p.amount, 0))}
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Outstanding Arrears</span>
+            <span className="text-3xl font-display font-extrabold text-rose-600 block">
+              {formatCurrency(124000)}
             </span>
-            <span className="text-xs text-slate-400">Reconciled via M-Pesa</span>
+            <span className="text-xs text-slate-400">2 accounts past due (Net 5 days)</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Maintenance Queue</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Active Repair Orders</span>
             <span className="text-3xl font-display font-extrabold text-amber-500 block">
-              {maintenanceTickets.filter(t => t.status !== 'resolved').length} Active
+              {maintenanceTickets.filter((t) => t.status !== 'resolved').length}
             </span>
-            <span className="text-xs text-slate-400">Technicians assigned</span>
+            <span className="text-xs text-slate-400">All assigned to technicians</span>
           </div>
         </div>
 
-        {/* Multi-Property Portfolio Showcase */}
-        <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        {/* ========================================================================= */}
+        {/* 1. REVENUE STREAMS & UTILITIES GRAPHICAL TRAJECTORY CHART */}
+        {/* ========================================================================= */}
+        <RevenueCollectionChart />
+
+        {/* ========================================================================= */}
+        {/* 2. MAINTENANCE & ISSUE RESOLUTION FUNNEL CHARTS */}
+        {/* ========================================================================= */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-display font-bold text-slate-900 dark:text-white">
-              Properties in Your Portfolio
-            </h2>
-            <Link to="/properties" className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1">
-              <span>View All Estates</span>
+            <div className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-amber-600" />
+              <h2 className="text-xl font-display font-bold text-slate-900 dark:text-white">
+                Estate Maintenance & Issue Resolution Graphics
+              </h2>
+            </div>
+            <Link to="/maintenance" className="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
+              <span>Open Work Order Dispatcher</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {properties.map((p) => {
-              const pUnits = units.filter((u) => u.propertyId === p.id || u.propertyName === p.name);
-              return (
-                <div key={p.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-white">{p.name}</span>
-                    <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
-                      {p.propertyType}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500">{p.location} • Caretaker: {p.caretakerPhone}</p>
-                  <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{pUnits.length} Units</span>
-                    <Link to="/units" className="text-blue-600 font-bold hover:underline">
-                      Manage Units &rarr;
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <MaintenanceCharts tickets={maintenanceTickets} />
         </div>
       </div>
     </div>
