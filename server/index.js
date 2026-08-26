@@ -140,8 +140,23 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     framework: 'Frappe Framework & ERPNext Accounts Bridge',
     app: 'tenant_portal',
-    modules: ['Accounts', 'Selling', 'Maintenance', 'Gate Pass'],
+    modules: ['Accounts', 'Selling', 'Maintenance', 'Gate Pass', 'Reports'],
     timestamp: new Date().toISOString()
+  });
+});
+
+// Reports API endpoint
+app.get('/api/reports', (req, res) => {
+  const db = getDb();
+  res.json({
+    status: 'ok',
+    reports: {
+      sales_invoices: db.salesInvoices || [],
+      payment_entries: db.paymentEntries || [],
+      gl_entries: db.glEntries || [],
+      tenants: db.tenants || [],
+      units: db.units || []
+    }
   });
 });
 
@@ -158,6 +173,7 @@ app.get('/api/resource/:doctype', (req, res) => {
   if (dt === 'rentpayment' || dt === 'payment') return res.json({ data: db.payments || [] });
   if (dt === 'maintenanceticket' || dt === 'maintenance') return res.json({ data: db.maintenanceTickets || [] });
   if (dt === 'gatepass') return res.json({ data: db.gatePasses || [] });
+  if (dt === 'reports' || dt === 'report') return res.json({ data: db.salesInvoices || [] });
 
   res.json({ data: [] });
 });
@@ -281,13 +297,12 @@ app.get('/favicon.svg', (req, res) => {
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 
-  // SPA fallback for client-side routes
-  app.use((req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(distPath, 'index.html'));
-    } else {
-      res.status(404).json({ error: 'Frappe / ERPNext API route not found' });
+  // Explicit catch-all GET route for all client-side SPA routes (dashboard, properties, units, tenants, accounting, reports, users, etc.)
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'Frappe / ERPNext API route not found' });
     }
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 }
 

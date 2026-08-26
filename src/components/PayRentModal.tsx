@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTenant } from '../context/TenantContext';
-import { CreditCard, X, DollarSign, Smartphone, ShieldCheck, CheckCircle2, Droplets } from 'lucide-react';
+import { CreditCard, X, DollarSign, Smartphone, ShieldCheck, CheckCircle2, Droplets, Zap } from 'lucide-react';
 
 export const PayRentModal: React.FC = () => {
   const {
@@ -12,21 +12,34 @@ export const PayRentModal: React.FC = () => {
   } = useTenant();
 
   const [phone, setPhone] = useState(activeTenant.phone || '+254 712 345 678');
-  const [paymentType, setPaymentType] = useState<'rent' | 'water' | 'full'>('full');
-  const [customAmount, setCustomAmount] = useState<number>(activeTenant.rentAmount + 2880);
+  const [paymentType, setPaymentType] = useState<'full' | 'rent' | 'water' | 'electricity'>('full');
+  
+  const estimatedWater = 2880;
+  const estimatedElectricity = 2422;
+  const totalFull = activeTenant.rentAmount + estimatedWater + estimatedElectricity;
+
+  const [customAmount, setCustomAmount] = useState<number>(totalFull);
 
   if (!isPayRentModalOpen) return null;
 
-  const handleTypeChange = (type: 'rent' | 'water' | 'full') => {
+  const handleTypeChange = (type: 'full' | 'rent' | 'water' | 'electricity') => {
     setPaymentType(type);
     if (type === 'rent') setCustomAmount(activeTenant.rentAmount);
-    else if (type === 'water') setCustomAmount(2880);
-    else setCustomAmount(activeTenant.rentAmount + 2880);
+    else if (type === 'water') setCustomAmount(estimatedWater);
+    else if (type === 'electricity') setCustomAmount(estimatedElectricity);
+    else setCustomAmount(totalFull);
   };
 
   const handleInitiateSTK = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || customAmount <= 0) return;
+
+    const labelMap = {
+      full: 'Rent, Water & Electricity Power Settlement',
+      rent: 'Monthly Lease Rent',
+      water: 'Water Utility Consumption Bill',
+      electricity: 'Electricity Power Sub-Meter Bill'
+    };
 
     triggerMpesaStkPush({
       phone,
@@ -34,7 +47,7 @@ export const PayRentModal: React.FC = () => {
       unitNumber: activeTenant.unitNumber,
       tenantName: activeTenant.name,
       propertyName: activeTenant.propertyName,
-      type: paymentType === 'full' ? 'Rent & Water Bill' : paymentType === 'water' ? 'Water Bill' : 'Monthly Rent',
+      type: labelMap[paymentType],
       invoiceMonth: 'September 2026'
     });
   };
@@ -63,8 +76,8 @@ export const PayRentModal: React.FC = () => {
         <form onSubmit={handleInitiateSTK} className="space-y-4">
           {/* Payment Type Switcher */}
           <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700 dark:text-slate-300">Select What to Pay:</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="block font-bold text-slate-700 dark:text-slate-300">Select Bill to Pay:</label>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => handleTypeChange('full')}
@@ -74,7 +87,7 @@ export const PayRentModal: React.FC = () => {
                     : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400'
                 }`}
               >
-                Rent + Water
+                All (Rent + Water + Power)
               </button>
               <button
                 type="button"
@@ -90,13 +103,26 @@ export const PayRentModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTypeChange('water')}
-                className={`p-2.5 rounded-xl font-bold transition text-center ${
+                className={`p-2.5 rounded-xl font-bold transition text-center flex items-center justify-center gap-1 ${
                   paymentType === 'water'
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-cyan-600 text-white shadow-sm'
                     : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400'
                 }`}
               >
-                Water Only
+                <Droplets className="w-3.5 h-3.5" />
+                <span>Water Bill</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTypeChange('electricity')}
+                className={`p-2.5 rounded-xl font-bold transition text-center flex items-center justify-center gap-1 ${
+                  paymentType === 'electricity'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Electricity Bill</span>
               </button>
             </div>
           </div>
@@ -126,7 +152,7 @@ export const PayRentModal: React.FC = () => {
 
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-[11px]">
             <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
-            <span>Clicking below triggers an instant Safaricom PIN authorization prompt on your handset.</span>
+            <span>Clicking below sends the prompt directly to your phone handset for instant M-Pesa PIN authorization.</span>
           </div>
 
           <button

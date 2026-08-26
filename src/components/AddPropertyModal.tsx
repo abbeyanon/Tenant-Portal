@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { useTenant } from '../context/TenantContext';
-import { Building2, X, PlusCircle, MapPin, Phone, User, Upload, Image as ImageIcon, Check } from 'lucide-react';
+import { Building2, X, PlusCircle, MapPin, Phone, User, Upload, Image as ImageIcon, Check, Briefcase, Home } from 'lucide-react';
 import { Property } from '../types';
 
 const propertyImagePresets = [
   {
-    label: 'Luxury Apartment Tower',
+    label: 'Luxury Residential Tower',
+    category: 'residential',
     url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=800&auto=format&fit=crop'
   },
   {
-    label: 'Modern Glass High-Rise',
+    label: 'Glass Commercial Plaza',
+    category: 'commercial',
     url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop'
   },
   {
-    label: 'Executive Suites & Balconies',
+    label: 'Executive Suites & Offices',
+    category: 'mixed_use',
     url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop'
   },
   {
-    label: 'Gated Townhouse Court',
-    url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop'
+    label: 'Industrial Logistics Godown',
+    category: 'commercial',
+    url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=800&auto=format&fit=crop'
   }
 ];
 
@@ -26,12 +30,13 @@ export const AddPropertyModal: React.FC = () => {
   const { isAddPropertyModalOpen, setIsAddPropertyModalOpen, addProperty } = useTenant();
 
   const [name, setName] = useState('');
-  const [location, setLocation] = useState('Ngong Road, Nairobi');
-  const [propertyType, setPropertyType] = useState<Property['propertyType']>('Apartment Complex');
-  const [totalUnits, setTotalUnits] = useState<number>(20);
+  const [location, setLocation] = useState('Westlands, Nairobi');
+  const [propertyCategory, setPropertyCategory] = useState<Property['propertyCategory']>('commercial');
+  const [propertyType, setPropertyType] = useState<Property['propertyType']>('Commercial Plaza');
+  const [totalUnits, setTotalUnits] = useState<number>(24);
   const [caretakerName, setCaretakerName] = useState('');
   const [caretakerPhone, setCaretakerPhone] = useState('+254 759 508 348');
-  const [image, setImage] = useState(propertyImagePresets[0].url);
+  const [image, setImage] = useState(propertyImagePresets[1].url);
   const [isCustomUpload, setIsCustomUpload] = useState(false);
 
   if (!isAddPropertyModalOpen) return null;
@@ -50,6 +55,20 @@ export const AddPropertyModal: React.FC = () => {
     }
   };
 
+  const handleCategoryChange = (cat: Property['propertyCategory']) => {
+    setPropertyCategory(cat);
+    if (cat === 'commercial') {
+      setPropertyType('Commercial Plaza');
+      setImage(propertyImagePresets[1].url);
+    } else if (cat === 'residential') {
+      setPropertyType('Apartment Complex');
+      setImage(propertyImagePresets[0].url);
+    } else {
+      setPropertyType('Office Complex');
+      setImage(propertyImagePresets[2].url);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
@@ -57,16 +76,17 @@ export const AddPropertyModal: React.FC = () => {
     addProperty({
       name,
       location,
+      propertyCategory,
       propertyType,
       totalUnits,
-      caretakerName: caretakerName || 'Estate Caretaker',
+      caretakerName: caretakerName || 'Estate/Property Caretaker',
       caretakerPhone: caretakerPhone || '+254 759 508 348',
       image: image || propertyImagePresets[0].url
     });
 
     setIsAddPropertyModalOpen(false);
     setName('');
-    setLocation('Ngong Road, Nairobi');
+    setLocation('Westlands, Nairobi');
     setCaretakerName('');
   };
 
@@ -85,19 +105,64 @@ export const AddPropertyModal: React.FC = () => {
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Add New Property / Estate</h3>
-            <p className="text-xs text-slate-500">Register a new residential building, attach photos & configure units</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Add Property / Real Estate Asset</h3>
+            <p className="text-xs text-slate-500">Manage Commercial Plazas, Office Towers, Industrial Parks & Residential Estates</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Property Category Switcher */}
+          <div>
+            <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Property Sector / Portfolio Category *</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleCategoryChange('commercial')}
+                className={`py-2 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition ${
+                  propertyCategory === 'commercial'
+                    ? 'bg-purple-50 dark:bg-purple-950/50 border-purple-600 text-purple-700 dark:text-purple-300'
+                    : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>Commercial</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCategoryChange('residential')}
+                className={`py-2 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition ${
+                  propertyCategory === 'residential'
+                    ? 'bg-brand-50 dark:bg-brand-950/50 border-brand-600 text-brand-700 dark:text-brand-300'
+                    : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Residential</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCategoryChange('mixed_use')}
+                className={`py-2 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition ${
+                  propertyCategory === 'mixed_use'
+                    ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-600 text-blue-700 dark:text-blue-300'
+                    : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Mixed-Use</span>
+              </button>
+            </div>
+          </div>
+
           {/* Property Name */}
           <div>
             <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Property / Building Name *</label>
             <input
               type="text"
               required
-              placeholder="e.g. Sapphire Palms Executive Suites"
+              placeholder={propertyCategory === 'commercial' ? "e.g. The Mirage Commercial Plaza & Towers" : "e.g. Sapphire Palms Executive Suites"}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -111,23 +176,35 @@ export const AddPropertyModal: React.FC = () => {
               <input
                 type="text"
                 required
-                placeholder="e.g. Kilimani, Nairobi"
+                placeholder="e.g. Chiromo Road, Westlands, Nairobi"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Property Type</label>
+              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Asset Type</label>
               <select
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value as any)}
                 className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold"
               >
-                <option value="Apartment Complex">Apartment Complex</option>
-                <option value="Executive Suites">Executive Suites</option>
-                <option value="Gated Community">Gated Community</option>
-                <option value="Commercial">Commercial Plaza</option>
+                {propertyCategory === 'commercial' ? (
+                  <>
+                    <option value="Commercial Plaza">Commercial Plaza</option>
+                    <option value="Office Complex">Office Complex / Tower</option>
+                    <option value="Retail Mall">Retail Mall & Shopping Center</option>
+                    <option value="Warehouse / Industrial">Warehouse / Industrial Godowns</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Apartment Complex">Apartment Complex</option>
+                    <option value="Executive Suites">Executive Suites</option>
+                    <option value="Gated Community">Gated Community</option>
+                    <option value="Commercial Plaza">Commercial Plaza</option>
+                    <option value="Warehouse / Industrial">Warehouse / Industrial</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -135,7 +212,7 @@ export const AddPropertyModal: React.FC = () => {
           {/* Specs */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Total Units</label>
+              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Total Leasable Units</label>
               <input
                 type="number"
                 value={totalUnits}
@@ -144,17 +221,17 @@ export const AddPropertyModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Caretaker Name</label>
+              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Caretaker / Facility Mgr</label>
               <input
                 type="text"
-                placeholder="e.g. Dennis Ochieng"
+                placeholder="e.g. Alexander Kiprotich"
                 value={caretakerName}
                 onChange={(e) => setCaretakerName(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs"
               />
             </div>
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Caretaker Phone</label>
+              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Manager Phone</label>
               <input
                 type="tel"
                 value={caretakerPhone}
@@ -178,7 +255,6 @@ export const AddPropertyModal: React.FC = () => {
 
             {/* Live Image Preview & File Upload Box */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-              {/* Preview Thumbnail */}
               <div className="h-28 rounded-xl overflow-hidden bg-slate-800 relative border border-slate-200 dark:border-slate-700">
                 {image ? (
                   <img src={image} alt="Property Preview" className="w-full h-full object-cover" />
@@ -192,7 +268,6 @@ export const AddPropertyModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Upload Button */}
               <div className="sm:col-span-2 space-y-2">
                 <label className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-brand-300 dark:border-brand-700 hover:border-brand-500 bg-brand-50/50 dark:bg-brand-950/20 cursor-pointer transition">
                   <Upload className="w-4 h-4 text-brand-600" />

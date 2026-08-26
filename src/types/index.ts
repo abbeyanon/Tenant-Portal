@@ -16,7 +16,8 @@ export interface Property {
   id: string;
   name: string;
   location: string;
-  propertyType: 'Apartment Complex' | 'Executive Suites' | 'Commercial' | 'Gated Community';
+  propertyCategory: 'residential' | 'commercial' | 'mixed_use';
+  propertyType: 'Apartment Complex' | 'Executive Suites' | 'Commercial Plaza' | 'Office Complex' | 'Retail Mall' | 'Warehouse / Industrial' | 'Gated Community';
   totalUnits: number;
   caretakerName: string;
   caretakerPhone: string;
@@ -57,10 +58,14 @@ export interface Tenant {
   name: string;
   email: string;
   phone: string;
+  tenantType?: 'individual' | 'corporate';
+  companyName?: string;
+  companyPin?: string;
   propertyId: string;
   propertyName: string;
   unitId: string;
   unitNumber: string;
+  unitCategory?: 'residential' | 'commercial';
   rentAmount: number;
   depositAmount: number;
   balanceDue: number;
@@ -75,6 +80,8 @@ export interface Tenant {
   vehiclePlate?: string;
   waterMeterNumber?: string;
   lastWaterReading?: number;
+  electricityMeterNumber?: string;
+  lastElectricityReading?: number;
   avatar?: string;
 }
 
@@ -83,16 +90,23 @@ export interface Unit {
   unitNumber: string;
   propertyId: string;
   propertyName: string;
+  unitCategory: 'residential' | 'commercial';
+  spaceType: 'Apartment' | 'Studio' | 'Executive Suite' | 'Office Suite' | 'Retail Shop' | 'Kiosk' | 'Warehouse / Godown' | 'Restaurant / Food Court' | 'Showroom' | 'Banking Hall';
   floor: number;
-  bedrooms: number;
-  bathrooms: number;
+  bedrooms?: number;
+  bathrooms?: number;
   squareFeet: number;
+  ratePerSqFt?: number;
+  serviceCharge?: number;
+  vatApplicable?: boolean;
   rentAmount: number;
   depositAmount: number;
   status: 'occupied' | 'vacant' | 'maintenance';
   currentTenantId?: string;
   currentTenantName?: string;
+  businessName?: string;
   waterMeterNumber?: string;
+  electricityMeterNumber?: string;
 }
 
 export interface InvoiceItem {
@@ -100,6 +114,7 @@ export interface InvoiceItem {
   itemCode: string;
   itemName: string;
   description?: string;
+  meterType?: 'water' | 'electricity';
   meterPrevious?: number;
   meterCurrent?: number;
   meterUnits?: number;
@@ -117,9 +132,12 @@ export interface SalesInvoice {
   companyPin?: string;
   companyAddress?: string;
   customerName: string;
+  customerType?: 'individual' | 'corporate';
+  customerPin?: string;
   customerAddress?: string;
   tenantPhone?: string;
   unitNumber: string;
+  unitCategory?: 'residential' | 'commercial';
   propertyId?: string;
   propertyName: string;
   items: InvoiceItem[];

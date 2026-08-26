@@ -7,6 +7,7 @@ import {
   Filter,
   UserPlus,
   Home,
+  Briefcase,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -14,7 +15,9 @@ import {
   DollarSign,
   Download,
   Edit,
-  Trash2
+  Trash2,
+  Zap,
+  Droplets
 } from 'lucide-react';
 import { Unit } from '../types';
 import { exportToCSV } from '../utils/exportUtils';
@@ -38,6 +41,7 @@ export const UnitsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'vacant' | 'occupied' | 'maintenance'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'commercial' | 'residential'>('all');
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
 
   const filteredUnits = units.filter((u) => {
@@ -45,10 +49,16 @@ export const UnitsPage: React.FC = () => {
     const matchesSearch =
       u.unitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.propertyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.spaceType && u.spaceType.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (u.currentTenantName && u.currentTenantName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || u.status === filterStatus;
-    return matchesProperty && matchesSearch && matchesStatus;
+    const matchesCategory =
+      categoryFilter === 'all' ||
+      (categoryFilter === 'commercial' && u.unitCategory === 'commercial') ||
+      (categoryFilter === 'residential' && u.unitCategory !== 'commercial');
+
+    return matchesProperty && matchesSearch && matchesStatus && matchesCategory;
   });
 
   const vacantCount = filteredUnits.filter((u) => u.status === 'vacant').length;
@@ -57,18 +67,22 @@ export const UnitsPage: React.FC = () => {
 
   const handleExportUnits = () => {
     const data = filteredUnits.map((u) => ({
-      UnitNumber: u.unitNumber,
+      UnitOrSpaceNumber: u.unitNumber,
       Property: u.propertyName,
+      Category: (u.unitCategory || 'residential').toUpperCase(),
+      SpaceType: u.spaceType || 'Apartment',
       Floor: u.floor,
-      Bedrooms: u.bedrooms,
-      Bathrooms: u.bathrooms,
       SquareFeet: u.squareFeet,
+      RatePerSqFt: u.ratePerSqFt || 'N/A',
       MonthlyRent: u.rentAmount,
+      CAMServiceCharge: u.serviceCharge || 0,
       SecurityDeposit: u.depositAmount,
+      WaterMeter: u.waterMeterNumber || 'N/A',
+      ElectricityMeter: u.electricityMeterNumber || 'N/A',
       Status: u.status.toUpperCase(),
       Tenant: u.currentTenantName || 'Vacant'
     }));
-    exportToCSV('units_inventory.csv', data);
+    exportToCSV('units_and_commercial_spaces.csv', data);
   };
 
   const handleAssignTenantToUnit = (unit: Unit) => {
@@ -84,13 +98,13 @@ export const UnitsPage: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold mb-2">
               <Building2 className="w-3.5 h-3.5" />
-              <span>Estate Inventory & Unit Management</span>
+              <span>Estate & Commercial Space Inventory</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Apartment Units Roster
+              Units & Commercial Spaces
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
-              Manage apartment inventory, track vacant ready-to-lease units, update rental pricing, and assign incoming tenants across all properties.
+              Track residential apartments, commercial retail shops, office suites, warehouses, sub-meters, and rent per square foot.
             </p>
           </div>
 
@@ -108,14 +122,35 @@ export const UnitsPage: React.FC = () => {
               className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 flex items-center gap-2 transition"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Add New Unit</span>
+              <span>+ Add Unit / Space</span>
             </button>
           </div>
         </div>
 
+        {/* Sector Tabs (All / Commercial / Residential) */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-bold">
+          {[
+            { id: 'all', label: `All Spaces (${units.length})` },
+            { id: 'commercial', label: `🏢 Commercial (${units.filter(u => u.unitCategory === 'commercial').length})` },
+            { id: 'residential', label: `🏠 Residential (${units.filter(u => u.unitCategory !== 'commercial').length})` }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setCategoryFilter(tab.id as any)}
+              className={`pb-3 transition border-b-2 ${
+                categoryFilter === tab.id
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Property Filter Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <span className="text-xs font-bold text-slate-500 shrink-0">Filter Property:</span>
+          <span className="text-xs font-bold text-slate-500 shrink-0">Property:</span>
           <button
             onClick={() => setSelectedPropertyId('all')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
@@ -124,7 +159,7 @@ export const UnitsPage: React.FC = () => {
                 : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
             }`}
           >
-            All Estates ({units.length} Units)
+            All Properties
           </button>
           {properties.map((p) => {
             const count = units.filter((u) => u.propertyId === p.id).length;
@@ -148,30 +183,30 @@ export const UnitsPage: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <span className="text-3xl font-display font-extrabold text-slate-900 dark:text-white block">
-              {filteredUnits.length} Units
+              {filteredUnits.length} Spaces
             </span>
-            <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Units</span>
+            <span className="text-xs text-slate-500 font-semibold mt-1 block">Total Inventory</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <span className="text-3xl font-display font-extrabold text-emerald-600 block">
               {occupiedCount}
             </span>
-            <span className="text-xs text-slate-500 font-semibold mt-1 block">Occupied Units</span>
+            <span className="text-xs text-slate-500 font-semibold mt-1 block">Occupied / Leased</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <span className="text-3xl font-display font-extrabold text-blue-600 dark:text-blue-400 block">
               {vacantCount}
             </span>
-            <span className="text-xs text-slate-500 font-semibold mt-1 block">Vacant (Ready to Lease)</span>
+            <span className="text-xs text-slate-500 font-semibold mt-1 block">Vacant (Available)</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
             <span className="text-3xl font-display font-extrabold text-amber-500 block">
               {maintenanceCount}
             </span>
-            <span className="text-xs text-slate-500 font-semibold mt-1 block">Under Maintenance</span>
+            <span className="text-xs text-slate-500 font-semibold mt-1 block">Under Renovation</span>
           </div>
         </div>
 
@@ -181,7 +216,7 @@ export const UnitsPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
             <input
               type="text"
-              placeholder="Search unit number, estate, tenant..."
+              placeholder="Search space number, estate, shop name, tenant..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-11 pr-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -213,105 +248,145 @@ export const UnitsPage: React.FC = () => {
 
         {/* Units Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUnits.map((u) => (
-            <div
-              key={u.id}
-              className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm hover:border-blue-500 transition flex flex-col justify-between space-y-6"
-            >
-              <div className="space-y-4">
-                {/* Unit Header */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-lg font-display font-extrabold text-slate-900 dark:text-white block">
-                      {u.unitNumber}
+          {filteredUnits.map((u) => {
+            const isCommercial = u.unitCategory === 'commercial';
+
+            return (
+              <div
+                key={u.id}
+                className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm hover:border-blue-500 transition flex flex-col justify-between space-y-6"
+              >
+                <div className="space-y-4">
+                  {/* Unit Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-display font-extrabold text-slate-900 dark:text-white block">
+                          {u.unitNumber}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                          isCommercial ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300'
+                        }`}>
+                          {u.spaceType || (isCommercial ? 'Commercial' : 'Apartment')}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium">Floor {u.floor} • {u.propertyName}</span>
+                    </div>
+
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                      u.status === 'vacant'
+                        ? 'bg-blue-50 dark:bg-blue-950 text-blue-600'
+                        : u.status === 'occupied'
+                        ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600'
+                        : 'bg-amber-50 dark:bg-amber-950 text-amber-600'
+                    }`}>
+                      {u.status}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">Floor {u.floor} • {u.propertyName}</span>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                    u.status === 'vacant'
-                      ? 'bg-blue-50 dark:bg-blue-950 text-blue-600'
-                      : u.status === 'occupied'
-                      ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600'
-                      : 'bg-amber-50 dark:bg-amber-950 text-amber-600'
-                  }`}>
-                    {u.status}
-                  </span>
-                </div>
-
-                {/* Specs Pill List */}
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Bedrooms</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{u.bedrooms} Bed</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Bathrooms</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{u.bathrooms} Bath</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Size</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{u.squareFeet} sq ft</span>
-                  </div>
-                </div>
-
-                {/* Financial Rates */}
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Monthly Rent:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(u.rentAmount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Security Deposit:</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(u.depositAmount)}</span>
-                  </div>
-
-                  {u.currentTenantName && (
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-750 flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Current Tenant:</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400">{u.currentTenantName}</span>
+                  {/* Specs Pill List */}
+                  {isCommercial ? (
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/40">
+                        <span className="text-[10px] text-purple-600 dark:text-purple-400 block">Area</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{u.squareFeet} sq ft</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/40">
+                        <span className="text-[10px] text-purple-600 dark:text-purple-400 block">Rate / Sq Ft</span>
+                        <span className="font-bold text-slate-900 dark:text-white">KES {u.ratePerSqFt || 120}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/40">
+                        <span className="text-[10px] text-purple-600 dark:text-purple-400 block">Monthly CAM</span>
+                        <span className="font-bold text-slate-900 dark:text-white">KES {(u.serviceCharge || 15000).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 block">Bedrooms</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{u.bedrooms} Bed</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 block">Bathrooms</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{u.bathrooms} Bath</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 block">Size</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{u.squareFeet} sq ft</span>
+                      </div>
                     </div>
                   )}
+
+                  {/* Financial Rates & Utility Meters */}
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Monthly Base Rent:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(u.rentAmount)}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Deposit:</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(u.depositAmount)}</span>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-750 flex items-center justify-between text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3 text-cyan-500" />
+                        <span>{u.waterMeterNumber || 'WM-402'}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-500" />
+                        <span>{u.electricityMeterNumber || 'KPLC-Sub'}</span>
+                      </span>
+                    </div>
+
+                    {u.currentTenantName && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-750 flex items-center justify-between text-xs">
+                        <span className="text-slate-500">Current Client:</span>
+                        <span className="font-bold text-purple-600 dark:text-purple-400 truncate max-w-[180px]">{u.currentTenantName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                  {u.status === 'vacant' ? (
+                    <button
+                      onClick={() => handleAssignTenantToUnit(u)}
+                      className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Assign Tenant</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => updateUnitStatus(u.id, u.status === 'occupied' ? 'vacant' : 'occupied')}
+                      className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 font-bold text-xs"
+                    >
+                      Set as {u.status === 'occupied' ? 'Vacant' : 'Occupied'}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setEditingUnit(u)}
+                    className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-bold"
+                    title="Edit Space"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => deleteUnit(u.id)}
+                    className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold"
+                    title="Delete Space"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                {u.status === 'vacant' ? (
-                  <button
-                    onClick={() => handleAssignTenantToUnit(u)}
-                    className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>Assign Tenant</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => updateUnitStatus(u.id, u.status === 'occupied' ? 'vacant' : 'occupied')}
-                    className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 font-bold text-xs"
-                  >
-                    Set as {u.status === 'occupied' ? 'Vacant' : 'Occupied'}
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setEditingUnit(u)}
-                  className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-bold"
-                  title="Edit Unit"
-                >
-                  <Edit className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={() => deleteUnit(u.id)}
-                  className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold"
-                  title="Delete Unit"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
